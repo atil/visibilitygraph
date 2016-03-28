@@ -2,46 +2,117 @@
 using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
-using UnityEngine.UI;
+using Pathfinding.SelfBalancedTree;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class Test : MonoBehaviour
 {
-    public GameObject Obs;
-    private Vector3[] floor;
-    private Polygon p;
+    private readonly List<Polygon> _polygons = new List<Polygon>();
+    private readonly List<Vertex> _visiblePoints = new List<Vertex>();
+    private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
 
-    public List<Vector3> points = new List<Vector3>();
-    public GameObject textPrefab;
-    public GameObject canvas;
+    public Transform Reference;
 
     void Start ()
-	{
-        floor = GetFloor(Obs.GetComponent<Collider>().bounds);
-        p = new Polygon(floor);
-
-        for (int i = 0; i < 10; i++)
+    {
+        foreach (var obstacleGo in GameObject.FindGameObjectsWithTag("Obstacle"))
         {
-            points.Add(new Vector3(Random.value * 20 - 10, 0, Random.value * 20 - 10));
-            GameObject.CreatePrimitive(PrimitiveType.Sphere).transform.position = points[i];
+            var floor = GetFloor(obstacleGo.GetComponent<Collider>().bounds);
+            _polygons.Add(new Polygon(floor));
         }
-
-        points = Util.SortClockwise(Vector3.zero, points);
-        GameObject.CreatePrimitive(PrimitiveType.Cube);
-
-        var index = 0;
-        foreach (Vector3 t in points)
-        {
-            var screenPos = Camera.main.WorldToScreenPoint(t);
-            var text = Instantiate(textPrefab, screenPos, Quaternion.identity) as GameObject;
-            text.transform.SetParent(canvas.transform);
-            text.GetComponent<Text>().text = index.ToString();
-            index++;
-        }
-
 
     }
 
- 
+    private bool IsVisible(Vector3 from, Vector3 to)
+    {
+        return true;
+    }
+
+    private List<Vertex> GetEventPoints(List<Polygon> polys)
+    {
+        var retVal = new List<Vertex>();
+        foreach (var polygon in polys)
+        {
+            foreach (var v in polygon.Vertices)
+            {
+                retVal.Add(v);
+            }
+        }
+        return retVal;
+    }
+
+    void VisibilePoints()
+    {
+        _visiblePoints.Clear();
+        var events = GetEventPoints(_polygons);
+        var sortedEvents = Util.SortClockwise(Vector3.zero, events);
+
+        var ray = new Ray(Reference.position, Vector3.right);
+        foreach (var polygon in _polygons)
+        {
+            foreach (var edge in polygon.Edges)
+            {
+                float t;
+                if (edge.IntersectsWith(ray, out t))
+                {
+                    edge.DistanceToReference = t;
+                    _bst.Add(edge);
+                }
+            }
+        }
+
+        foreach (var eventPoint in sortedEvents)
+        {
+            // TODO: All edges' DistanceToRef params might be needed to be updated here
+
+            ray = new Ray(Reference.position, eventPoint.Position);
+
+            if (IsVisible(Reference.position, eventPoint.Position))
+            {
+
+                _visiblePoints.Add(eventPoint);
+                foreach (var edge in eventPoint.GetEdgesOnSide(true))
+                {
+                    float t;
+                    var succ = edge.IntersectsWith(ray, out t);
+
+                    // Error checking
+                    if (!succ)
+                    {
+                        Debug.LogError("Something's wrong! Added edge should intersect with rotationally sweeping plane");
+                        Debug.LogError("Edge with points : " + edge.Vertex1.Position + " and " + edge.Vertex2.Position);
+#if UNITY_EDITOR
+                        EditorApplication.isPlaying = false;
+#endif
+                    }
+
+                    edge.DistanceToReference = t;
+
+                    _bst.Add(edge);
+                }
+
+                foreach (var edge in eventPoint.GetEdgesOnSide(false))
+                {
+                    _bst.Delete(edge);
+                }
+            }
+        }
+
+        _bst.Clear();
+
+        foreach (var visiblePoint in _visiblePoints)
+        {
+            Debug.DrawLine(Reference.position, visiblePoint.Position);
+        }
+    }
+
+    void Update()
+    {
+        VisibilePoints();
+    }
+
     private Vector3[] GetFloor(Bounds b)
     {
         var bMin = b.min;

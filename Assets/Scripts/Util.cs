@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Pathfinding;
 
 public static class Util
 {
@@ -22,25 +23,62 @@ public static class Util
 
     }
 
-    public static List<Vector3> SortClockwise(Vector3 reference, List<Vector3> points)
+    public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d, out float t)
     {
-        var angleToPoint = new SortedList<float, Vector3>();
+        t = -1;
+
+        var a = ray.origin;
+        var b = ray.origin + ray.direction;
+        var bax = b.x - a.x;
+        var bay = b.z - a.z;
+        var dcx = d.x - c.x;
+        var dcy = d.z - c.z;
+        var cax = c.x - a.x;
+        var cay = c.z - a.z;
+
+        var cross1 = (bax * dcy) - (bay * dcx);
+        var cross2 = (cay * bax) - (cax * bay);
+
+        if (Approx(cross1, 0))
+        {
+            if (Approx(cross2, 0))
+            {
+                // TODO: Handle colinear
+            }
+            return false;
+        }
+
+        dcx /= cross1;
+        dcy /= cross1;
+
+        bax /= cross1;
+        bay /= cross1;
+
+        var t1 = (cax * dcy) - (cay * dcx);
+        var t2 = (cax * bay) - (cay * bax);
+
+        if (t1 >= -0.001f && (t2 >= -0.001f && t2 <= 1.001f))
+        {
+            t = t1;
+            return true;
+        }
+
+        return false;
+    }
+
+    public static List<Vertex> SortClockwise(Vector3 reference, List<Vertex> points)
+    {
+        var angleToPoint = new SortedList<float, Vertex>();
         foreach (var p in points)
         {
-            angleToPoint.Add(CalculateAngle(reference + Vector3.right, p - reference), p);
+            angleToPoint.Add(CalculateAngle(reference + Vector3.right, p.Position - reference), p);
         }
         return angleToPoint.Values.ToList();
     }
-   
-    private static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
+
+    public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
     {
         return Vector3.Cross(v2 - v1, p - v1).y > 0;
-    }
-
-    public static bool Intersects(Vector3 a1, Vector3 a2, Vector3 b1, Vector3 b2)
-    {
-        // Stolen from: http://yunus.hacettepe.edu.tr/~burkay.genc/courses/bca608/slides/week3.pdf
-        return (Left(a1, a2, b1) && Left(a1, a2, b2)) ^ (Left(b1, b2, a1) && Left(b1, b2, a2));
     }
 
     public static bool Equals(this Vector3 v1, Vector3 v2)
