@@ -23,11 +23,7 @@ public class Test : MonoBehaviour
             _polygons.Add(new Polygon(floor));
         }
 
-    }
-
-    private bool IsVisible(Vector3 from, Vector3 to)
-    {
-        return true;
+        VisibilePoints();
     }
 
     private List<Vertex> GetEventPoints(List<Polygon> polys)
@@ -41,6 +37,20 @@ public class Test : MonoBehaviour
             }
         }
         return retVal;
+    }
+
+    private bool IsVisible(Vector3 from, Vector3 to)
+    {
+        // Here, we will assume that degenerate cases will not happen
+        Edge leftMostEdge;
+        _bst.GetMin(out leftMostEdge);
+
+        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from, to))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     void VisibilePoints()
@@ -65,31 +75,12 @@ public class Test : MonoBehaviour
 
         foreach (var eventPoint in sortedEvents)
         {
-            // TODO: All edges' DistanceToRef params might be needed to be updated here
-
-            ray = new Ray(Reference.position, eventPoint.Position);
-
             if (IsVisible(Reference.position, eventPoint.Position))
             {
-
                 _visiblePoints.Add(eventPoint);
                 foreach (var edge in eventPoint.GetEdgesOnSide(true))
                 {
-                    float t;
-                    var succ = edge.IntersectsWith(ray, out t);
-
-                    // Error checking
-                    if (!succ)
-                    {
-                        Debug.LogError("Something's wrong! Added edge should intersect with rotationally sweeping plane");
-                        Debug.LogError("Edge with points : " + edge.Vertex1.Position + " and " + edge.Vertex2.Position);
-#if UNITY_EDITOR
-                        EditorApplication.isPlaying = false;
-#endif
-                    }
-
-                    edge.DistanceToReference = t;
-
+                    edge.DistanceToReference = edge.DistanceTo(Reference.position);
                     _bst.Add(edge);
                 }
 
@@ -98,19 +89,21 @@ public class Test : MonoBehaviour
                     _bst.Delete(edge);
                 }
             }
+        
+        }
+
+        foreach (var visiblePoint in _visiblePoints)
+        {
+            Debug.DrawLine(Reference.position, visiblePoint.Position, Color.white, float.MaxValue);
         }
 
         _bst.Clear();
 
-        foreach (var visiblePoint in _visiblePoints)
-        {
-            Debug.DrawLine(Reference.position, visiblePoint.Position);
-        }
     }
 
     void Update()
     {
-        VisibilePoints();
+        //VisibilePoints();
     }
 
     private Vector3[] GetFloor(Bounds b)

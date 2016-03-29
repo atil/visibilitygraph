@@ -23,6 +23,12 @@ public static class Util
 
     }
 
+    public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d)
+    {
+        float t;
+        return RayLineIntersection(ray, c, d, out t);
+    }
+
     public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d, out float t)
     {
         t = -1;
@@ -64,6 +70,19 @@ public static class Util
         }
 
         return false;
+    }
+
+    public static float PointLineSegmentDistance(Vector3 v1, Vector3 v2, Vector3 p)
+    {
+        var lenSqr = (v1 - v2).sqrMagnitude;
+        if (Approx(lenSqr, 0))
+        {
+            return Vector3.Distance(v1, p); // v1 == v2 case
+        }
+
+        var t = Mathf.Max(0, Mathf.Min(1, Vector3.Dot(p - v1, v2 - v1) / lenSqr));
+        var proj = v1 + t * (v2 - v1);
+        return Vector3.Distance(p, proj);
     }
 
     public static List<Vertex> SortClockwise(Vector3 reference, List<Vertex> points)

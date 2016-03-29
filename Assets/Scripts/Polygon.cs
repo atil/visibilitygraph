@@ -6,27 +6,6 @@ using System.Linq;
 
 namespace Pathfinding
 {
-    public class EdgeDistancePair : IComparable<EdgeDistancePair>
-    {
-        public Edge Edge { get; private set; }
-        public float Distance { get; private set; }
-
-        public EdgeDistancePair(Edge e, float t)
-        {
-            Edge = e;
-            Distance = t;
-        }
-
-        public int CompareTo(EdgeDistancePair other)
-        {
-            if (other == null)
-            {
-                return 1;
-            }
-            return Distance.CompareTo(other.Distance);
-        }
-    }
-
     public class Edge : IComparable<Edge>
     {
         public float DistanceToReference { get; set; } 
@@ -40,6 +19,11 @@ namespace Pathfinding
             Vertex2 = vertex2;
         }
 
+        public float DistanceTo(Vector3 p)
+        {
+            return Util.PointLineSegmentDistance(Vertex1.Position, Vertex2.Position, p);
+        }
+
         public bool IntersectsWith(Vector3 other1, Vector3 other2)
         {
             // Stolen from: http://yunus.hacettepe.edu.tr/~burkay.genc/courses/bca608/slides/week3.pdf
@@ -50,6 +34,11 @@ namespace Pathfinding
         public bool IntersectsWith(Edge e)
         {
             return IntersectsWith(e.Vertex1.Position, e.Vertex2.Position);
+        }
+
+        public bool IntersectsWith(Ray ray)
+        {
+            return Util.RayLineIntersection(ray, Vertex1.Position, Vertex2.Position);
         }
 
         public bool IntersectsWith(Ray ray, out float t)
@@ -65,6 +54,11 @@ namespace Pathfinding
             }
             return DistanceToReference.CompareTo(other.DistanceToReference);
 
+        }
+
+        public override string ToString()
+        {
+            return Vertex1.ToString() + " - " + Vertex2.ToString();
         }
     }
 
@@ -85,15 +79,17 @@ namespace Pathfinding
 
             var e1Other = Edge1.Vertex1 == this ? Edge1.Vertex2 : Edge1.Vertex1;
             var e2Other = Edge2.Vertex1 == this ? Edge2.Vertex2 : Edge2.Vertex1;
+            var cross1 = Vector3.Cross(Position, e1Other.Position);
+            var cross2 = Vector3.Cross(Position, e2Other.Position);
 
             if (isClockwise)
             {
-                if (e1Other.Position.z < Position.z)
+                if (cross1.y > 0)
                 {
                     retVal.Add(Edge1);
                 }
 
-                if (e2Other.Position.z < Position.z)
+                if (cross2.y > 0)
                 {
                     retVal.Add(Edge2);
                 }
@@ -101,12 +97,12 @@ namespace Pathfinding
             }
             else
             {
-                if (e1Other.Position.z > Position.z)
+                if (cross1.y < 0)
                 {
                     retVal.Add(Edge1);
                 }
 
-                if (e2Other.Position.z > Position.z)
+                if (cross2.y < 0)
                 {
                     retVal.Add(Edge2);
                 }
@@ -116,7 +112,10 @@ namespace Pathfinding
             return retVal;
         }
 
-        
+        public override string ToString()
+        {
+            return Position.ToString();
+        }
     }
 
     public class Polygon
