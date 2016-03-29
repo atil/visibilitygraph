@@ -78,24 +78,30 @@ public class Test : MonoBehaviour
             if (IsVisible(Reference.position, eventPoint.Position))
             {
                 _visiblePoints.Add(eventPoint);
+
+                // Algorithm adds CW edges, then deletes CCW ones
+                // The reverse is done here,
+                // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
+                // Removing the older "d" also removes the newly added one
+
+                foreach (var edge in eventPoint.GetEdgesOnSide(false))
+                {
+                    _bst.Delete(edge);
+                }
                 foreach (var edge in eventPoint.GetEdgesOnSide(true))
                 {
                     edge.DistanceToReference = edge.DistanceTo(Reference.position);
                     _bst.Add(edge);
                 }
 
-                foreach (var edge in eventPoint.GetEdgesOnSide(false))
-                {
-                    _bst.Delete(edge);
-                }
             }
-        
+
         }
 
-        foreach (var visiblePoint in _visiblePoints)
-        {
-            Debug.DrawLine(Reference.position, visiblePoint.Position, Color.white, float.MaxValue);
-        }
+        //foreach (var visiblePoint in _visiblePoints)
+        //{
+        //    Debug.DrawLine(Reference.position, visiblePoint.Position, Color.white, float.MaxValue);
+        //}
 
         _bst.Clear();
 

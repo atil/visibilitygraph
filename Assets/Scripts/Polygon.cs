@@ -58,7 +58,7 @@ namespace Pathfinding
 
         public override string ToString()
         {
-            return Vertex1.ToString() + " - " + Vertex2.ToString();
+            return Vertex1 + " - " + Vertex2;
         }
     }
 
