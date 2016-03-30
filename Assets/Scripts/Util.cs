@@ -6,32 +6,26 @@ using System.Globalization;
 using System.Linq;
 using Pathfinding;
 
-/// <summary>
-/// Comparer for comparing two keys, handling equality as beeing greater
-/// Use this Comparer e.g. with SortedLists or SortedDictionaries, that don't allow duplicate keys
-/// </summary>
-/// <typeparam name="TKey"></typeparam>
-public class DuplicateKeyComparer<TKey>
-                :
-             IComparer<TKey> where TKey : IComparable
+public class DuplicateKeyComparer<T> : IComparer<T> where T : IComparable
 {
-    #region IComparer<TKey> Members
-
-    public int Compare(TKey x, TKey y)
+    public int Compare(T x, T y)
     {
-        int result = x.CompareTo(y);
+        var result = x.CompareTo(y);
 
-        if (result == 0)
-            return 1;   // Handle equality as beeing greater
-        else
-            return result;
+        return result == 0 ? 1 : result;
     }
-
-    #endregion
 }
 
 public static class Util
 {
+    public static readonly DuplicateKeyComparer<float> FloatComparer; 
+    private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
+    static Util()
+    {
+        FloatComparer = new DuplicateKeyComparer<float>();
+        AngleToPoint = new SortedList<float, Vertex>(FloatComparer);
+    }
+
     public static float CalculateAngle(Vector3 from, Vector3 to)
     {
         var sign = Vector3.Cross(from, to).y > 0;
@@ -112,12 +106,12 @@ public static class Util
 
     public static List<Vertex> SortClockwise(Vector3 reference, List<Vertex> points)
     {
-        var angleToPoint = new SortedList<float, Vertex>(new DuplicateKeyComparer<float>());
+        AngleToPoint.Clear();
         foreach (var p in points)
         {
-            angleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
+            AngleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
         }
-        return angleToPoint.Values.ToList();
+        return AngleToPoint.Values.ToList();
     }
 
     public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)

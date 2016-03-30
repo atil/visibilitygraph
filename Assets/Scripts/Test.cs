@@ -29,7 +29,6 @@ public class Test : MonoBehaviour
             _allVertices.AddRange(polygon.Vertices);
         }
 
-        int i = 0;
         foreach (var polygon in _polygons)
         {
             foreach (var vertex in polygon.Vertices)
@@ -37,12 +36,11 @@ public class Test : MonoBehaviour
                 vertex.VisibleVertices.Clear();
                 vertex.VisibleVertices.AddRange(GetVisibilePoints(vertex, polygon, _allVertices));
 
-                if (i == 0) foreach (var visibleVertex in vertex.VisibleVertices)
+                foreach (var visibleVertex in vertex.VisibleVertices)
                 {
                     Debug.DrawLine(vertex.Position, visibleVertex.Position, Color.red, float.MaxValue);
                 }
             }
-            i++;
         }
 
 
@@ -107,33 +105,26 @@ public class Test : MonoBehaviour
             if (IsVisible(v, ownerPolygon, eventPoint))
             {
                 visiblePoints.Add(eventPoint);
-
-                // Algorithm adds CW edges, then deletes CCW ones
-                // The reverse is done here,
-                // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
-                // Removing the older "d" also removes the newly added one
-
-                foreach (var edge in eventPoint.GetEdgesOnSide(false, v))
-                {
-                    _bst.Delete(edge);
-                }
-                foreach (var edge in eventPoint.GetEdgesOnSide(true, v))
-                {
-                    edge.DistanceToReference = edge.DistanceTo(v.Position); // TODO: This line smells
-                    _bst.Add(edge);
-                }
-
+            }
+            
+            // Algorithm adds CW edges, then deletes CCW ones
+            // The reverse is done here,
+            // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
+            // Removing the older "d" also removes the newly added one
+            foreach (var edge in eventPoint.GetEdgesOnSide(false, v))
+            {
+                _bst.Delete(edge);
+            }
+            foreach (var edge in eventPoint.GetEdgesOnSide(true, v))
+            {
+                edge.DistanceToReference = edge.DistanceTo(v.Position); // TODO: This line smells
+                _bst.Add(edge);
             }
 
         }
 
         _bst.Clear();
         return visiblePoints;
-    }
-
-    void Update()
-    {
-        //VisibilePoints();
     }
 
     private Vector3[] GetFloor(Bounds b)
