@@ -1,9 +1,34 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Pathfinding;
+
+/// <summary>
+/// Comparer for comparing two keys, handling equality as beeing greater
+/// Use this Comparer e.g. with SortedLists or SortedDictionaries, that don't allow duplicate keys
+/// </summary>
+/// <typeparam name="TKey"></typeparam>
+public class DuplicateKeyComparer<TKey>
+                :
+             IComparer<TKey> where TKey : IComparable
+{
+    #region IComparer<TKey> Members
+
+    public int Compare(TKey x, TKey y)
+    {
+        int result = x.CompareTo(y);
+
+        if (result == 0)
+            return 1;   // Handle equality as beeing greater
+        else
+            return result;
+    }
+
+    #endregion
+}
 
 public static class Util
 {
@@ -63,7 +88,7 @@ public static class Util
         var t1 = (cax * dcy) - (cay * dcx);
         var t2 = (cax * bay) - (cay * bax);
 
-        if (t1 >= -0.001f && (t2 >= -0.001f && t2 <= 1.001f))
+        if (t1 >= 0.001f && (t2 >= 0.001f && t2 <= 0.999f))
         {
             t = t1;
             return true;
@@ -80,17 +105,17 @@ public static class Util
             return Vector3.Distance(v1, p); // v1 == v2 case
         }
 
-        var t = Mathf.Max(0, Mathf.Min(1, Vector3.Dot(p - v1, v2 - v1) / lenSqr));
+        var t = Mathf.Max(0.0001f, Mathf.Min(0.9999f, Vector3.Dot(p - v1, v2 - v1) / lenSqr));
         var proj = v1 + t * (v2 - v1);
         return Vector3.Distance(p, proj);
     }
 
     public static List<Vertex> SortClockwise(Vector3 reference, List<Vertex> points)
     {
-        var angleToPoint = new SortedList<float, Vertex>();
+        var angleToPoint = new SortedList<float, Vertex>(new DuplicateKeyComparer<float>());
         foreach (var p in points)
         {
-            angleToPoint.Add(CalculateAngle(reference + Vector3.right, p.Position - reference), p);
+            angleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
         }
         return angleToPoint.Values.ToList();
     }

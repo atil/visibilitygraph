@@ -10,8 +10,8 @@ using UnityEditor;
 public class Test : MonoBehaviour
 {
     private readonly List<Polygon> _polygons = new List<Polygon>();
-    private readonly List<Vertex> _visiblePoints = new List<Vertex>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
+    private readonly List<Vertex> _allVertices = new List<Vertex>();
 
     public Transform Reference;
 
@@ -21,31 +21,56 @@ public class Test : MonoBehaviour
         {
             var floor = GetFloor(obstacleGo.GetComponent<Collider>().bounds);
             _polygons.Add(new Polygon(floor));
+            
         }
 
-        VisibilePoints();
-    }
-
-    private List<Vertex> GetEventPoints(List<Polygon> polys)
-    {
-        var retVal = new List<Vertex>();
-        foreach (var polygon in polys)
+        foreach (var polygon in _polygons)
         {
-            foreach (var v in polygon.Vertices)
-            {
-                retVal.Add(v);
-            }
+            _allVertices.AddRange(polygon.Vertices);
         }
-        return retVal;
+
+        int i = 0;
+        foreach (var polygon in _polygons)
+        {
+            foreach (var vertex in polygon.Vertices)
+            {
+                vertex.VisibleVertices.Clear();
+                vertex.VisibleVertices.AddRange(GetVisibilePoints(vertex, polygon, _allVertices));
+
+                if (i == 0) foreach (var visibleVertex in vertex.VisibleVertices)
+                {
+                    Debug.DrawLine(vertex.Position, visibleVertex.Position, Color.red, float.MaxValue);
+                }
+            }
+            i++;
+        }
+
+
     }
 
-    private bool IsVisible(Vector3 from, Vector3 to)
+    private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
     {
-        // Here, we will assume that degenerate cases will not happen
+        // Non-neighbor vertices of the same ploygon don't see each other
+        if (ownerPolygon.Vertices.Contains(to)) 
+        {
+            return false;
+        }
+
+        if (from.IsNeighbor(to))
+        {
+            return true;
+        }
+
+        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
+        if (ownerPolygon.IntersectsWith(nudgedFrom, to.Position))
+        {
+            return false;
+        }
+
         Edge leftMostEdge;
         _bst.GetMin(out leftMostEdge);
 
-        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from, to))
+        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from.Position, to.Position))
         {
             return false;
         }
@@ -53,13 +78,12 @@ public class Test : MonoBehaviour
         return true;
     }
 
-    void VisibilePoints()
+    private List<Vertex> GetVisibilePoints(Vertex v, Polygon ownerPolygon, List<Vertex> allVertices)
     {
-        _visiblePoints.Clear();
-        var events = GetEventPoints(_polygons);
-        var sortedEvents = Util.SortClockwise(Vector3.zero, events);
+        var visiblePoints = new List<Vertex>();
+        var sortedEvents = Util.SortClockwise(v.Position, allVertices);
 
-        var ray = new Ray(Reference.position, Vector3.right);
+        var ray = new Ray(v.Position, Vector3.right);
         foreach (var polygon in _polygons)
         {
             foreach (var edge in polygon.Edges)
@@ -75,22 +99,27 @@ public class Test : MonoBehaviour
 
         foreach (var eventPoint in sortedEvents)
         {
-            if (IsVisible(Reference.position, eventPoint.Position))
+            if (eventPoint == v)
             {
-                _visiblePoints.Add(eventPoint);
+                continue;
+            }
+
+            if (IsVisible(v, ownerPolygon, eventPoint))
+            {
+                visiblePoints.Add(eventPoint);
 
                 // Algorithm adds CW edges, then deletes CCW ones
                 // The reverse is done here,
                 // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
                 // Removing the older "d" also removes the newly added one
 
-                foreach (var edge in eventPoint.GetEdgesOnSide(false))
+                foreach (var edge in eventPoint.GetEdgesOnSide(false, v))
                 {
                     _bst.Delete(edge);
                 }
-                foreach (var edge in eventPoint.GetEdgesOnSide(true))
+                foreach (var edge in eventPoint.GetEdgesOnSide(true, v))
                 {
-                    edge.DistanceToReference = edge.DistanceTo(Reference.position);
+                    edge.DistanceToReference = edge.DistanceTo(v.Position); // TODO: This line smells
                     _bst.Add(edge);
                 }
 
@@ -98,13 +127,8 @@ public class Test : MonoBehaviour
 
         }
 
-        //foreach (var visiblePoint in _visiblePoints)
-        //{
-        //    Debug.DrawLine(Reference.position, visiblePoint.Position, Color.white, float.MaxValue);
-        //}
-
         _bst.Clear();
-
+        return visiblePoints;
     }
 
     void Update()

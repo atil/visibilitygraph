@@ -19,6 +19,21 @@ namespace Pathfinding
             Vertex2 = vertex2;
         }
 
+        public Vertex GetOther(Vertex v)
+        {
+            if (v == Vertex1)
+            {
+                return Vertex2;
+            }
+
+            if (v == Vertex2)
+            {
+                return Vertex1;
+            }
+            Debug.LogError("Edge.GetOther failure");
+            return null;
+        }
+
         public float DistanceTo(Vector3 p)
         {
             return Util.PointLineSegmentDistance(Vertex1.Position, Vertex2.Position, p);
@@ -68,19 +83,25 @@ namespace Pathfinding
         public Edge Edge1 { get; set; }
         public Edge Edge2 { get; set; }
 
+        public List<Vertex> VisibleVertices { get; private set; } 
+
         public Vertex(Vector3 pos)
         {
             Position = pos;
+            VisibleVertices = new List<Vertex>();
         }
 
-        public List<Edge> GetEdgesOnSide(bool isClockwise) // TODO: Could be cached?
+        public bool IsNeighbor(Vertex v)
+        {
+            return Edge1.GetOther(this) == v || Edge2.GetOther(this) == v;
+        }
+
+        public List<Edge> GetEdgesOnSide(bool isClockwise, Vertex reference) // TODO: Could be cached?
         {
             var retVal = new List<Edge>();
 
-            var e1Other = Edge1.Vertex1 == this ? Edge1.Vertex2 : Edge1.Vertex1;
-            var e2Other = Edge2.Vertex1 == this ? Edge2.Vertex2 : Edge2.Vertex1;
-            var cross1 = Vector3.Cross(Position, e1Other.Position);
-            var cross2 = Vector3.Cross(Position, e2Other.Position);
+            var cross1 = Vector3.Cross(Position - reference.Position, Edge1.GetOther(this).Position - reference.Position);
+            var cross2 = Vector3.Cross(Position - reference.Position, Edge2.GetOther(this).Position - reference.Position);
 
             if (isClockwise)
             {
@@ -147,5 +168,17 @@ namespace Pathfinding
             Edges.Add(eLast);
         }
 
+        public bool IntersectsWith(Vector3 v1, Vector3 v2)
+        {
+            foreach (var edge in Edges)
+            {
+                if (edge.IntersectsWith(v1, v2))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
