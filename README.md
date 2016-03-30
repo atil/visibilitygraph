@@ -1,4 +1,4 @@
-# Visibility graph in Unity
+# Visibility graph in Unity [WIP]
 de Berg's visibility graph implementation in Unity
 
 Used algorithm explained in the following link: 

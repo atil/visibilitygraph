@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
@@ -7,21 +8,38 @@ using Pathfinding.SelfBalancedTree;
 using UnityEditor;
 #endif
 
+public class PathEdge : IEquatable<PathEdge>
+{
+    public Vertex Vertex1 { get; private set; }
+    public Vertex Vertex2 { get; private set; }
+
+    public PathEdge(Vertex v1, Vertex v2)
+    {
+        Vertex1 = v1;
+        Vertex2 = v2;
+    }
+
+    public bool Equals(PathEdge other)
+    {
+        return (Vertex1 == other.Vertex1 && Vertex2 == other.Vertex2)
+               || (Vertex1 == other.Vertex2 && Vertex2 == other.Vertex1);
+    }
+}
+
 public class Test : MonoBehaviour
 {
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
     private readonly List<Vertex> _allVertices = new List<Vertex>();
 
-    public Transform Reference;
+    private readonly HashSet<PathEdge> _pathEdges = new HashSet<PathEdge>();
 
-    void Start ()
+    void Start()
     {
         foreach (var obstacleGo in GameObject.FindGameObjectsWithTag("Obstacle"))
         {
             var floor = GetFloor(obstacleGo.GetComponent<Collider>().bounds);
             _polygons.Add(new Polygon(floor));
-            
         }
 
         foreach (var polygon in _polygons)
@@ -33,23 +51,26 @@ public class Test : MonoBehaviour
         {
             foreach (var vertex in polygon.Vertices)
             {
-                vertex.VisibleVertices.Clear();
-                vertex.VisibleVertices.AddRange(GetVisibilePoints(vertex, polygon, _allVertices));
+                var visibleVertices = GetVisibilePoints(vertex, polygon, _allVertices);
 
-                foreach (var visibleVertex in vertex.VisibleVertices)
+                foreach (var visibleVertex in visibleVertices)
                 {
-                    Debug.DrawLine(vertex.Position, visibleVertex.Position, Color.red, float.MaxValue);
+                    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
                 }
             }
         }
 
+        foreach (var pathEdge in _pathEdges)
+        {
+            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red, float.MaxValue);
+        }
 
     }
 
     private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
     {
         // Non-neighbor vertices of the same ploygon don't see each other
-        if (ownerPolygon.Vertices.Contains(to)) 
+        if (ownerPolygon.Vertices.Contains(to))
         {
             return false;
         }
@@ -106,7 +127,7 @@ public class Test : MonoBehaviour
             {
                 visiblePoints.Add(eventPoint);
             }
-            
+
             // Algorithm adds CW edges, then deletes CCW ones
             // The reverse is done here,
             // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
@@ -136,7 +157,7 @@ public class Test : MonoBehaviour
         var b3 = new Vector3(bMax.x, bMin.y, bMax.z);
         var b4 = new Vector3(bMin.x, bMin.y, bMax.z);
 
-        return new[] {b1, b2, b3, b4};
+        return new[] { b1, b2, b3, b4 };
     }
 
 }
