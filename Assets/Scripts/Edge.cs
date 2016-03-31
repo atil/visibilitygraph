@@ -43,6 +43,8 @@ namespace Pathfinding
 
         public float DistanceTo(Vector3 p)
         {
+            // TODO: This one should be used, but it's broken
+            //return Util.PointLineSegmentDistance2(_v1X, _v1Z, _v2X, _v2Z, p.x, p.z);
             return Util.PointLineSegmentDistance(Vertex1.Position, Vertex2.Position, p);
         }
 

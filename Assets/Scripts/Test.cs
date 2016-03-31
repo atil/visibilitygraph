@@ -58,13 +58,27 @@ public class Test : MonoBehaviour
             }
         }
 
-        CalculateVisiblityGraph();
+        //CalculateVisiblityGraph();
 
     }
 
+
+    private Vector3[] GetFloor(Bounds b)
+    {
+        var bMin = b.min;
+        var bMax = b.max;
+        var b1 = new Vector3(bMin.x, 0, bMin.z);
+        var b2 = new Vector3(bMax.x, 0, bMin.z);
+        var b3 = new Vector3(bMax.x, 0, bMax.z);
+        var b4 = new Vector3(bMin.x, 0, bMax.z);
+
+        return new[] { b1, b2, b3, b4 };
+    }
+
+
     void Update()
     {
-        //CalculateVisiblityGraph();
+        CalculateVisiblityGraph();
     }
 
     void CalculateVisiblityGraph()
@@ -92,40 +106,7 @@ public class Test : MonoBehaviour
         }
     }
 
-    private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
-    {
-        // Non-neighbor vertices of the same ploygon don't see each other
-        if (ownerPolygon.Vertices.Contains(to))
-        {
-            return false;
-        }
-
-        // Neighboring vertices are assumed to be seeing each other
-        if (from.IsNeighborWith(to))
-        {
-            return true;
-        }
-
-        // Check with if intersecting with owner polygon
-        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
-        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
-        if (ownerPolygon.IntersectsWith(nudgedFrom, to.Position))
-        {
-            return false;
-        }
-
-        Edge leftMostEdge;
-        _bst.GetMin(out leftMostEdge);
-
-        if (leftMostEdge != null
-            && leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
+    
     private List<Vertex> GetVisibilePoints(Vertex v, Polygon ownerPolygon, Vertex[] allVertices)
     {
         var visiblePoints = new List<Vertex>();
@@ -183,16 +164,39 @@ public class Test : MonoBehaviour
         return visiblePoints;
     }
 
-    private Vector3[] GetFloor(Bounds b)
+    private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
     {
-        var bMin = b.min;
-        var bMax = b.max;
-        var b1 = new Vector3(bMin.x, 0, bMin.z);
-        var b2 = new Vector3(bMax.x, 0, bMin.z);
-        var b3 = new Vector3(bMax.x, 0, bMax.z);
-        var b4 = new Vector3(bMin.x, 0, bMax.z);
+        // Non-neighbor vertices of the same ploygon don't see each other
+        if (ownerPolygon.Vertices.Contains(to))
+        {
+            return false;
+        }
 
-        return new[] { b1, b2, b3, b4 };
+        // Neighboring vertices are assumed to be seeing each other
+        if (from.IsNeighborWith(to))
+        {
+            return true;
+        }
+
+        // Check with if intersecting with owner polygon
+        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
+        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
+        if (ownerPolygon.IntersectsWith(nudgedFrom, to.Position))
+        {
+            return false;
+        }
+
+        Edge leftMostEdge;
+        _bst.GetMin(out leftMostEdge);
+
+        if (leftMostEdge != null
+            && leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
+        {
+            return false;
+        }
+
+        return true;
     }
+
 
 }

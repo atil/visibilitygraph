@@ -17,10 +17,25 @@ namespace Pathfinding
         }
     }
 
+    public class VertexComparer : IComparer<Vertex>
+    {
+        public Vector3 Reference { get; set; }
+
+        public int Compare(Vertex x, Vertex y)
+        {
+            var a1 = Util.CalculateAngle(Vector3.right, x.Position - Reference);
+            var a2 = Util.CalculateAngle(Vector3.right, y.Position - Reference);
+
+            var result = a1.CompareTo(a2);
+            return result == 0 ? 1 : result;
+        }
+    }
+
     public static class Util
     {
         public static readonly DuplicateKeyComparer<float> FloatComparer;
         private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
+        private static readonly VertexComparer VertexComparer = new VertexComparer();
 
         static Util()
         {
@@ -144,8 +159,25 @@ namespace Pathfinding
             return Vector3.Distance(p, proj);
         }
 
+        public static float PointLineSegmentDistance2(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)
+        {
+            var lenSqr = (v1X - v2X) * (v1X - v2X) + (v1Z - v2Z) * (v1Z - v2Z);
+            var dot = (pX - v1X) * (v2X - v1X) + (pZ - v1Z) * (v2Z - v1Z);
+            var t = Mathf.Clamp(dot / lenSqr, 0.0001f, 0.9999f);
+
+            var projX = v1X + t * (v2X - v1X);
+            var projZ = v1Z + t * (v2Z - v1Z);
+
+            return Mathf.Sqrt((projX - v1X) * (projX - v1X) + (projZ - v1Z) * (projZ - v1Z));
+        }
+
         public static Vertex[] SortClockwise(Vector3 reference, Vertex[] points)
         {
+            // TODO: This should be faster. Why is it not? Is it Unity's ancient mono version?
+            //VertexComparer.Reference = reference;
+            //Array.Sort(points, VertexComparer);
+            //return points;
+
             AngleToPoint.Clear();
             foreach (var p in points)
             {
