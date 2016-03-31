@@ -166,7 +166,16 @@ public class Test : MonoBehaviour
 
     private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
     {
-        // Non-neighbor vertices of the same ploygon don't see each other
+        // Check with if intersecting with owner polygon
+        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
+        // This check is the first one, since it has a greater probablity of eliminating further checks
+        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
+        if (ownerPolygon.IntersectsWith(nudgedFrom.x, nudgedFrom.z, to.Position.x, to.Position.z))
+        {
+            return false;
+        }
+
+        // Non-neighbor vertices of the same polygon don't see each other
         if (ownerPolygon.Vertices.Contains(to))
         {
             return false;
@@ -176,14 +185,6 @@ public class Test : MonoBehaviour
         if (from.IsNeighborWith(to))
         {
             return true;
-        }
-
-        // Check with if intersecting with owner polygon
-        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
-        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
-        if (ownerPolygon.IntersectsWith(nudgedFrom, to.Position))
-        {
-            return false;
         }
 
         Edge leftMostEdge;

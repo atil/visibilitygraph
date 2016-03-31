@@ -43,9 +43,7 @@ namespace Pathfinding
 
         public float DistanceTo(Vector3 p)
         {
-            // TODO: This one should be used, but it's broken
-            //return Util.PointLineSegmentDistance2(_v1X, _v1Z, _v2X, _v2Z, p.x, p.z);
-            return Util.PointLineSegmentDistance(Vertex1.Position, Vertex2.Position, p);
+            return Util.PointLineSegmentDistance(_v1X, _v1Z, _v2X, _v2Z, p.x, p.z);
         }
 
         public bool IntersectsWith(float o1X, float o1Z, float o2X, float o2Z)
@@ -60,7 +58,7 @@ namespace Pathfinding
 
         public bool IntersectsWith(Ray ray, out float t)
         {
-            return Util.RayLineIntersection(ray, Vertex1.Position, Vertex2.Position, out t);
+            return Util.RayLineIntersection(ray, _v1X, _v1Z, _v2X, _v2Z, out t);
         }
 
         public int CompareTo(Edge other)

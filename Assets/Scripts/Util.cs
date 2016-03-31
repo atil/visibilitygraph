@@ -101,7 +101,7 @@ namespace Pathfinding
 
         }
 
-        public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d, out float t)
+        public static bool RayLineIntersection(Ray ray, float cx, float cz, float dx, float dz, out float t)
         {
             t = -1;
 
@@ -109,10 +109,10 @@ namespace Pathfinding
             var b = ray.origin + ray.direction;
             var bax = b.x - a.x;
             var bay = b.z - a.z;
-            var dcx = d.x - c.x;
-            var dcy = d.z - c.z;
-            var cax = c.x - a.x;
-            var cay = c.z - a.z;
+            var dcx = dx - cx;
+            var dcy = dz - cz;
+            var cax = cx - a.x;
+            var cay = cz - a.z;
 
             var cross1 = (bax * dcy) - (bay * dcx);
             var cross2 = (cay * bax) - (cax * bay);
@@ -146,20 +146,7 @@ namespace Pathfinding
 
         // Taken from:
         // http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-        public static float PointLineSegmentDistance(Vector3 v1, Vector3 v2, Vector3 p)
-        {
-            var lenSqr = (v1 - v2).sqrMagnitude;
-            if (Approx(lenSqr, 0))
-            {
-                return Vector3.Distance(v1, p); // v1 == v2 case
-            }
-
-            var t = Mathf.Max(0.0001f, Mathf.Min(0.9999f, Vector3.Dot(p - v1, v2 - v1) / lenSqr));
-            var proj = v1 + t * (v2 - v1);
-            return Vector3.Distance(p, proj);
-        }
-
-        public static float PointLineSegmentDistance2(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)
+        public static float PointLineSegmentDistance(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)
         {
             var lenSqr = (v1X - v2X) * (v1X - v2X) + (v1Z - v2Z) * (v1Z - v2Z);
             var dot = (pX - v1X) * (v2X - v1X) + (pZ - v1Z) * (v2Z - v1Z);
@@ -168,7 +155,7 @@ namespace Pathfinding
             var projX = v1X + t * (v2X - v1X);
             var projZ = v1Z + t * (v2Z - v1Z);
 
-            return Mathf.Sqrt((projX - v1X) * (projX - v1X) + (projZ - v1Z) * (projZ - v1Z));
+            return Mathf.Sqrt((projX - pX) * (projX - pX) + (projZ - pZ) * (projZ - pZ));
         }
 
         public static Vertex[] SortClockwise(Vector3 reference, Vertex[] points)

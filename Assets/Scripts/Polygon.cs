@@ -43,11 +43,11 @@ namespace Pathfinding
             }
         }
 
-        public bool IntersectsWith(Vector3 v1, Vector3 v2)
+        public bool IntersectsWith(float v1X, float v1Z, float v2X, float v2Z)
         {
             for (int i = 0; i < Edges.Length; i++)
             {
-                if (Edges[i].IntersectsWith(v1.x, v1.z, v2.x, v2.z))
+                if (Edges[i].IntersectsWith(v1X, v1Z, v2X, v2Z))
                 {
                     return true;
                 }
