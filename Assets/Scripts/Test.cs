@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Pathfinding;
 using Pathfinding.SelfBalancedTree;
 #if UNITY_EDITOR
@@ -30,13 +31,15 @@ public class Test : MonoBehaviour
 {
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
-    private readonly List<Vertex> _allVertices = new List<Vertex>();
-
     private readonly HashSet<PathEdge> _pathEdges = new HashSet<PathEdge>();
+    private List<GameObject> _obstacleGos = new List<GameObject>(); 
+
+    private readonly List<Vertex> _allVertices = new List<Vertex>(); 
 
     void Start()
     {
-        foreach (var obstacleGo in GameObject.FindGameObjectsWithTag("Obstacle"))
+        _obstacleGos = GameObject.FindGameObjectsWithTag("Obstacle").ToList();
+        foreach (var obstacleGo in _obstacleGos)
         {
             var floor = GetFloor(obstacleGo.GetComponent<Collider>().bounds);
             _polygons.Add(new Polygon(floor));
@@ -46,25 +49,33 @@ public class Test : MonoBehaviour
         {
             _allVertices.AddRange(polygon.Vertices);
         }
+    }
 
+    void Update()
+    {
+        CalculateVisiblityGraph();
+    }
+
+    void CalculateVisiblityGraph()
+    {
+        
         foreach (var polygon in _polygons)
         {
             foreach (var vertex in polygon.Vertices)
             {
                 var visibleVertices = GetVisibilePoints(vertex, polygon, _allVertices);
 
-                foreach (var visibleVertex in visibleVertices)
-                {
-                    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
-                }
+                //foreach (var visibleVertex in visibleVertices)
+                //{
+                //    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
+                //}
             }
         }
 
-        foreach (var pathEdge in _pathEdges)
-        {
-            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red, float.MaxValue);
-        }
-
+        //foreach (var pathEdge in _pathEdges)
+        //{
+        //    Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
+        //}
     }
 
     private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
@@ -75,7 +86,8 @@ public class Test : MonoBehaviour
             return false;
         }
 
-        if (from.IsNeighbor(to))
+        // Neighboring vertices are assumed to be seeing each other
+        if (from.IsNeighborWith(to))
         {
             return true;
         }
@@ -89,7 +101,7 @@ public class Test : MonoBehaviour
         Edge leftMostEdge;
         _bst.GetMin(out leftMostEdge);
 
-        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from.Position, to.Position))
+        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
         {
             return false;
         }
@@ -132,14 +144,20 @@ public class Test : MonoBehaviour
             // The reverse is done here,
             // Reason is because when an edge is added with a ref distance value "d" already exists in the tree
             // Removing the older "d" also removes the newly added one
-            foreach (var edge in eventPoint.GetEdgesOnSide(false, v))
+            foreach (var edge in eventPoint.GetEdgesOnCCwSide(v))
             {
-                _bst.Delete(edge);
+                if (edge != null)
+                {
+                    _bst.Delete(edge);
+                }
             }
-            foreach (var edge in eventPoint.GetEdgesOnSide(true, v))
+            foreach (var edge in eventPoint.GetEdgesOnCwSide(v))
             {
-                edge.DistanceToReference = edge.DistanceTo(v.Position); // TODO: This line smells
-                _bst.Add(edge);
+                if (edge != null)
+                {
+                    edge.DistanceToReference = edge.DistanceTo(v.Position); // TODO: This line smells
+                    _bst.Add(edge);
+                }
             }
 
         }

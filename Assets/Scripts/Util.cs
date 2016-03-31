@@ -1,13 +1,12 @@
 ﻿using System;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using Pathfinding;
 
 namespace Pathfinding
 {
+    // Taken from:
+    // http://stackoverflow.com/questions/5716423/c-sharp-sortable-collection-which-allows-duplicate-keys
     public class DuplicateKeyComparer<T> : IComparer<T> where T : IComparable
     {
         public int Compare(T x, T y)
@@ -121,6 +120,11 @@ namespace Pathfinding
         public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
         {
             return Vector3.Cross(v2 - v1, p - v1).y > 0;
+        }
+
+        public static bool Left(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)
+        {
+            return ((v2X - v1X) * (pZ - v1Z) - (v2Z - v1Z) * (pZ - v1Z)) > 0;
         }
 
         public static bool Equals(this Vector3 v1, Vector3 v2)
