@@ -56,6 +56,9 @@ public class Test : MonoBehaviour
                 _allVertices[i++] = v;
             }
         }
+
+        //CalculateVisiblityGraph();
+
     }
 
     void Update()
@@ -65,7 +68,6 @@ public class Test : MonoBehaviour
 
     void CalculateVisiblityGraph()
     {
-        
         foreach (var polygon in _polygons)
         {
             foreach (var vertex in polygon.Vertices)
@@ -81,7 +83,7 @@ public class Test : MonoBehaviour
 
         foreach (var pathEdge in _pathEdges)
         {
-            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
+            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red, float.MaxValue);
         }
     }
 
@@ -108,7 +110,10 @@ public class Test : MonoBehaviour
         Edge leftMostEdge;
         _bst.GetMin(out leftMostEdge);
 
-        if (leftMostEdge != null && leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
+        if (leftMostEdge != null
+            && leftMostEdge.IntersectsWith(from.Position, to.Position))
+        // TODO: Figure out why this doesn't work
+        //&& leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
         {
             return false;
         }
@@ -177,10 +182,10 @@ public class Test : MonoBehaviour
     {
         var bMin = b.min;
         var bMax = b.max;
-        var b1 = new Vector3(bMin.x, bMin.y, bMin.z);
-        var b2 = new Vector3(bMax.x, bMin.y, bMin.z);
-        var b3 = new Vector3(bMax.x, bMin.y, bMax.z);
-        var b4 = new Vector3(bMin.x, bMin.y, bMax.z);
+        var b1 = new Vector3(bMin.x, 0, bMin.z);
+        var b2 = new Vector3(bMax.x, 0, bMin.z);
+        var b3 = new Vector3(bMax.x, 0, bMax.z);
+        var b4 = new Vector3(bMin.x, 0, bMax.z);
 
         return new[] { b1, b2, b3, b4 };
     }

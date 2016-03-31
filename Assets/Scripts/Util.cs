@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,14 +18,58 @@ namespace Pathfinding
         }
     }
 
+
     public static class Util
     {
         public static readonly DuplicateKeyComparer<float> FloatComparer;
         private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
+
         static Util()
         {
             FloatComparer = new DuplicateKeyComparer<float>();
             AngleToPoint = new SortedList<float, Vertex>(FloatComparer);
+        }
+
+        // Taken from: http://snipd.net/quicksort-in-c
+        public static void Quicksort(IComparable[] elements, int left, int right)
+        {
+            int i = left, j = right;
+            IComparable pivot = elements[(left + right) / 2];
+
+            while (i <= j)
+            {
+                while (elements[i].CompareTo(pivot) < 0)
+                {
+                    i++;
+                }
+
+                while (elements[j].CompareTo(pivot) > 0)
+                {
+                    j--;
+                }
+
+                if (i <= j)
+                {
+                    // Swap
+                    IComparable tmp = elements[i];
+                    elements[i] = elements[j];
+                    elements[j] = tmp;
+
+                    i++;
+                    j--;
+                }
+            }
+
+            // Recursive calls
+            if (left < j)
+            {
+                Quicksort(elements, left, j);
+            }
+
+            if (i < right)
+            {
+                Quicksort(elements, i, right);
+            }
         }
 
         public static float CalculateAngle(Vector3 from, Vector3 to)
@@ -115,6 +160,7 @@ namespace Pathfinding
                 AngleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
             }
             return AngleToPoint.Values.ToArray();
+
         }
 
         public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
