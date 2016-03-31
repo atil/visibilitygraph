@@ -32,6 +32,7 @@ public class Test : MonoBehaviour
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
     private readonly HashSet<PathEdge> _pathEdges = new HashSet<PathEdge>();
+    private readonly HashSet<int> _duplicateEdgeGuard = new HashSet<int>();
     private List<GameObject> _obstacleGos = new List<GameObject>();
 
     private Vertex[] _allVertices;
@@ -57,13 +58,13 @@ public class Test : MonoBehaviour
             }
         }
 
-        //CalculateVisiblityGraph();
+        CalculateVisiblityGraph();
 
     }
 
     void Update()
     {
-        CalculateVisiblityGraph();
+        //CalculateVisiblityGraph();
     }
 
     void CalculateVisiblityGraph()
@@ -76,14 +77,18 @@ public class Test : MonoBehaviour
 
                 foreach (var visibleVertex in visibleVertices)
                 {
-                    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
+                    if (!_duplicateEdgeGuard.Contains(vertex.GetHashCode() ^ visibleVertex.GetHashCode()))
+                    {
+                        _duplicateEdgeGuard.Add(vertex.GetHashCode() ^ visibleVertex.GetHashCode());
+                        _pathEdges.Add(new PathEdge(vertex, visibleVertex));
+                    }
                 }
             }
         }
 
         foreach (var pathEdge in _pathEdges)
         {
-            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red, float.MaxValue);
+            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
         }
     }
 
@@ -101,6 +106,8 @@ public class Test : MonoBehaviour
             return true;
         }
 
+        // Check with if intersecting with owner polygon
+        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
         var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
         if (ownerPolygon.IntersectsWith(nudgedFrom, to.Position))
         {
@@ -111,9 +118,7 @@ public class Test : MonoBehaviour
         _bst.GetMin(out leftMostEdge);
 
         if (leftMostEdge != null
-            && leftMostEdge.IntersectsWith(from.Position, to.Position))
-        // TODO: Figure out why this doesn't work
-        //&& leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
+            && leftMostEdge.IntersectsWith(from.Position.x, from.Position.z, to.Position.x, to.Position.z))
         {
             return false;
         }

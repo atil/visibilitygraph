@@ -75,9 +75,6 @@ namespace Pathfinding
             var cross1 = (x1 * z2) - (x2 * z1);
             var cross2 = (x1 * z3) - (x3 * z1);
 
-            //var cross1 = Vector3.Cross(Position - reference.Position, _neighbors[0].Position - reference.Position);
-            //var cross2 = Vector3.Cross(Position - reference.Position, _neighbors[1].Position - reference.Position);
-
             if (cross1 < 0)
             {
                 retVal[0] = Edge1;
@@ -106,9 +103,6 @@ namespace Pathfinding
 
             var cross1 = (x1 * z2) - (x2 * z1);
             var cross2 = (x1 * z3) - (x3 * z1);
-
-            //var cross1 = Vector3.Cross(Position - reference.Position, _neighbors[0].Position - reference.Position);
-            //var cross2 = Vector3.Cross(Position - reference.Position, _neighbors[1].Position - reference.Position);
 
             if (cross1 > 0)
             {

@@ -13,11 +13,9 @@ namespace Pathfinding
         public int Compare(T x, T y)
         {
             var result = x.CompareTo(y);
-
             return result == 0 ? 1 : result;
         }
     }
-
 
     public static class Util
     {
@@ -74,7 +72,7 @@ namespace Pathfinding
 
         public static float CalculateAngle(Vector3 from, Vector3 to)
         {
-            var sign = Vector3.Cross(from, to).y > 0;
+            var sign = from.x * to.z - from.z * to.x < 0;
             var angle = Vector3.Angle(from, to);
 
             if (sign)
@@ -86,12 +84,6 @@ namespace Pathfinding
                 return (360 - angle) % 360;
             }
 
-        }
-
-        public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d)
-        {
-            float t;
-            return RayLineIntersection(ray, c, d, out t);
         }
 
         public static bool RayLineIntersection(Ray ray, Vector3 c, Vector3 d, out float t)
@@ -163,19 +155,9 @@ namespace Pathfinding
 
         }
 
-        public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
-        {
-            return Vector3.Cross(v2 - v1, p - v1).y > 0;
-        }
-
         public static bool Left(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)
         {
-            return ((v2X - v1X) * (pZ - v1Z) - (v2Z - v1Z) * (pZ - v1Z)) > 0;
-        }
-
-        public static bool Equals(this Vector3 v1, Vector3 v2)
-        {
-            return Approx(v1.x, v2.x) && Approx(v1.y, v2.y) && Approx(v1.z, v2.z);
+            return (v2X - v1X) * (pZ - v1Z) - (v2Z - v1Z) * (pX - v1X) > 0;
         }
 
         public static bool Approx(float x, float y)

@@ -53,14 +53,6 @@ namespace Pathfinding
                 }
             }
 
-            //foreach (var edge in Edges)
-            //{
-            //    if (edge.IntersectsWith(v1, v2))
-            //    {
-            //        return true;
-            //    }
-            //}
-
             return false;
         }
     }
