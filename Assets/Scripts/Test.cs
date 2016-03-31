@@ -32,9 +32,9 @@ public class Test : MonoBehaviour
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
     private readonly HashSet<PathEdge> _pathEdges = new HashSet<PathEdge>();
-    private List<GameObject> _obstacleGos = new List<GameObject>(); 
+    private List<GameObject> _obstacleGos = new List<GameObject>();
 
-    private readonly List<Vertex> _allVertices = new List<Vertex>(); 
+    private Vertex[] _allVertices;
 
     void Start()
     {
@@ -45,9 +45,16 @@ public class Test : MonoBehaviour
             _polygons.Add(new Polygon(floor));
         }
 
+        var totalVertexCount = _polygons.Sum(x => x.Vertices.Count);
+        _allVertices = new Vertex[totalVertexCount];
+
+        var i = 0;
         foreach (var polygon in _polygons)
         {
-            _allVertices.AddRange(polygon.Vertices);
+            foreach (var v in polygon.Vertices)
+            {
+                _allVertices[i++] = v;
+            }
         }
     }
 
@@ -65,17 +72,17 @@ public class Test : MonoBehaviour
             {
                 var visibleVertices = GetVisibilePoints(vertex, polygon, _allVertices);
 
-                //foreach (var visibleVertex in visibleVertices)
-                //{
-                //    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
-                //}
+                foreach (var visibleVertex in visibleVertices)
+                {
+                    _pathEdges.Add(new PathEdge(vertex, visibleVertex));
+                }
             }
         }
 
-        //foreach (var pathEdge in _pathEdges)
-        //{
-        //    Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
-        //}
+        foreach (var pathEdge in _pathEdges)
+        {
+            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
+        }
     }
 
     private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
@@ -109,7 +116,7 @@ public class Test : MonoBehaviour
         return true;
     }
 
-    private List<Vertex> GetVisibilePoints(Vertex v, Polygon ownerPolygon, List<Vertex> allVertices)
+    private List<Vertex> GetVisibilePoints(Vertex v, Polygon ownerPolygon, Vertex[] allVertices)
     {
         var visiblePoints = new List<Vertex>();
         var sortedEvents = Util.SortClockwise(v.Position, allVertices);

@@ -102,7 +102,7 @@ namespace Pathfinding
 
         private Edge _edge1;
         private Edge _edge2;
-        private Vertex[] _neighbors = new Vertex[2];
+        private readonly Vertex[] _neighbors = new Vertex[2];
 
         public Edge Edge1
         {

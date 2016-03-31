@@ -107,14 +107,14 @@ namespace Pathfinding
             return Vector3.Distance(p, proj);
         }
 
-        public static List<Vertex> SortClockwise(Vector3 reference, List<Vertex> points)
+        public static Vertex[] SortClockwise(Vector3 reference, Vertex[] points)
         {
             AngleToPoint.Clear();
             foreach (var p in points)
             {
                 AngleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
             }
-            return AngleToPoint.Values.ToList();
+            return AngleToPoint.Values.ToArray();
         }
 
         public static bool Left(Vector3 v1, Vector3 v2, Vector3 p)
