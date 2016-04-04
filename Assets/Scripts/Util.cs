@@ -158,7 +158,7 @@ namespace Pathfinding
             return Mathf.Sqrt((projX - pX) * (projX - pX) + (projZ - pZ) * (projZ - pZ));
         }
 
-        public static Vertex[] SortClockwise(Vector3 reference, Vertex[] points)
+        public static Vertex[] SortClockwise(Vector3 reference, List<Vertex> points)
         {
             // TODO: This should be faster. Why is it not? Is it Unity's ancient mono version?
             //VertexComparer.Reference = reference;

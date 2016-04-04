@@ -18,7 +18,7 @@ namespace Pathfinding
 
             foreach (var v in vertices)
             {
-                Vertices.Add(new Vertex(v));
+                Vertices.Add(new Vertex(v, this));
             }
 
             for (var i = 1; i < Vertices.Count; i++)
@@ -35,11 +35,35 @@ namespace Pathfinding
             Edges[vertices.Length - 1] = eLast;
         }
 
+        public void WarpTo(Vector3[] newPositions)
+        {
+            // Must be warping to an identical shape
+            if (newPositions.Length != Vertices.Count)
+            {
+                return;
+            }
+
+            for (var i = 0; i < newPositions.Length; i++)
+            {
+                Vertices[i].WarpTo(newPositions[i]);
+            }
+
+            foreach (var edge in Edges)
+            {
+                edge.RecacheVertexPositions();
+            }
+        }
+
         public void Move(Vector3 moveVec)
         {
             foreach (var vertex in Vertices)
             {
                 vertex.Move(moveVec);
+            }
+
+            foreach (var edge in Edges)
+            {
+                edge.RecacheVertexPositions();
             }
         }
 

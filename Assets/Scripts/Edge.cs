@@ -7,35 +7,41 @@ namespace Pathfinding
     {
         public float DistanceToReference { get; set; }
 
-        private readonly float _v1X;
-        private readonly float _v1Z;
-        private readonly float _v2X;
-        private readonly float _v2Z;
+        private readonly Vertex _vertex1;
+        private readonly Vertex _vertex2;
 
-        public Vertex Vertex1 { get; private set; }
-        public Vertex Vertex2 { get; private set; }
+        // Caching for fast access
+        private float _v1X;
+        private float _v1Z;
+        private float _v2X;
+        private float _v2Z;
 
         public Edge(Vertex vertex1, Vertex vertex2)
         {
-            Vertex1 = vertex1;
-            Vertex2 = vertex2;
+            _vertex1 = vertex1;
+            _vertex2 = vertex2;
 
-            _v1X = Vertex1.Position.x;
-            _v1Z = Vertex1.Position.z;
-            _v2X = Vertex2.Position.x;
-            _v2Z = Vertex2.Position.z;
+            RecacheVertexPositions();   
+        }
+
+        public void RecacheVertexPositions()
+        {
+            _v1X = _vertex1.Position.x;
+            _v1Z = _vertex1.Position.z;
+            _v2X = _vertex2.Position.x;
+            _v2Z = _vertex2.Position.z;
         }
 
         public Vertex GetOther(Vertex v)
         {
-            if (v == Vertex1)
+            if (v == _vertex1)
             {
-                return Vertex2;
+                return _vertex2;
             }
 
-            if (v == Vertex2)
+            if (v == _vertex2)
             {
-                return Vertex1;
+                return _vertex1;
             }
             Debug.LogError("Edge.GetOther failure");
             return null;
@@ -71,9 +77,10 @@ namespace Pathfinding
             return DistanceToReference.CompareTo(other.DistanceToReference);
         }
 
+
         public override string ToString()
         {
-            return Vertex1 + " - " + Vertex2;
+            return _vertex1 + " - " + _vertex2;
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Pathfinding
         private Edge _edge1;
         private Edge _edge2;
         private readonly Vertex[] _neighbors = new Vertex[2];
+        private readonly Polygon _ownerPolygon;
 
         public Edge Edge1
         {
@@ -40,13 +41,23 @@ namespace Pathfinding
             }
         }
 
+        public Polygon OwnerPolygon
+        {
+            get { return _ownerPolygon; }
+        }
+
         public List<Edge> ClockwiseEdges;
         public List<Edge> CounterclockwiseEdges;
 
-        public Vertex(Vector3 pos)
+        public Vertex(Vector3 pos, Polygon ownerPolygon)
         {
             Position = pos;
+            _ownerPolygon = ownerPolygon;
+        }
 
+        public void WarpTo(Vector3 pos)
+        {
+            Position = pos;
         }
 
         public void Move(Vector3 moveVec)
@@ -56,7 +67,7 @@ namespace Pathfinding
 
         public bool IsNeighborWith(Vertex v)
         {
-            return Edge1.GetOther(this) == v || Edge2.GetOther(this) == v;
+            return _neighbors[0] == v || _neighbors[1] == v;
         }
 
         public Edge[] GetEdgesOnCwSide(Vertex reference) // Clockwise

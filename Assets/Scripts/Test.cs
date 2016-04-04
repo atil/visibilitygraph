@@ -31,11 +31,11 @@ public class Test : MonoBehaviour
 {
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
-    private readonly HashSet<PathEdge> _pathEdges = new HashSet<PathEdge>();
-    private readonly HashSet<int> _duplicateEdgeGuard = new HashSet<int>();
+    private readonly Dictionary<int, PathEdge> _pathEdgeDict = new Dictionary<int, PathEdge>(); 
     private List<GameObject> _obstacleGos = new List<GameObject>();
 
-    private Vertex[] _allVertices;
+    private List<Vertex> _allVertices;
+
 
     void Start()
     {
@@ -46,22 +46,21 @@ public class Test : MonoBehaviour
             _polygons.Add(new Polygon(floor));
         }
 
-        var totalVertexCount = _polygons.Sum(x => x.Vertices.Count);
-        _allVertices = new Vertex[totalVertexCount];
+        _allVertices = new List<Vertex>();
 
-        var i = 0;
         foreach (var polygon in _polygons)
         {
             foreach (var v in polygon.Vertices)
             {
-                _allVertices[i++] = v;
+                _allVertices.Add(v);
             }
         }
 
-        //CalculateVisiblityGraph();
-
+        foreach (var v in _allVertices)
+        {
+            CalculateVisiblity(v, _allVertices);
+        }
     }
-
 
     private Vector3[] GetFloor(Bounds b)
     {
@@ -75,39 +74,111 @@ public class Test : MonoBehaviour
         return new[] { b1, b2, b3, b4 };
     }
 
-
     void Update()
     {
-        CalculateVisiblityGraph();
-    }
+        //_polygons[0].WarpTo(GetFloor(_obstacleGos[0].GetComponent<Collider>().bounds));
 
-    void CalculateVisiblityGraph()
-    {
-        foreach (var polygon in _polygons)
+        //CalculateVisiblityGraph(_allVertices);
+
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            foreach (var vertex in polygon.Vertices)
-            {
-                var visibleVertices = GetVisibilePoints(vertex, polygon, _allVertices);
-
-                foreach (var visibleVertex in visibleVertices)
-                {
-                    if (!_duplicateEdgeGuard.Contains(vertex.GetHashCode() ^ visibleVertex.GetHashCode()))
-                    {
-                        _duplicateEdgeGuard.Add(vertex.GetHashCode() ^ visibleVertex.GetHashCode());
-                        _pathEdges.Add(new PathEdge(vertex, visibleVertex));
-                    }
-                }
-            }
+            MovePolygon(_polygons[0], Vector3.forward);
+            //foreach (var v in _allVertices)
+            //{
+            //    CalculateVisiblity(v, _allVertices);
+            //}
+            var a = 3;
         }
 
-        foreach (var pathEdge in _pathEdges)
+        foreach (var pathEdge in _pathEdgeDict.Values)
         {
             Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
         }
     }
 
+    private void MovePolygon(Polygon polygon, Vector3 moveVec)
+    {
+        // This holds vertices from the polygon's broken visibilities and newly acquired visibilities
+        // Not from polygon itself
+        var verticesToRecalc = new HashSet<Vertex>();
+
+        // Polygon's existing visibility edges are to be removed
+        var polygonVisibilities = new HashSet<int>();
+        foreach (var pathEdgeEntry in _pathEdgeDict)
+        {
+            if (polygon.Vertices.Contains(pathEdgeEntry.Value.Vertex1) || polygon.Vertices.Contains(pathEdgeEntry.Value.Vertex2))
+            {
+                // We don't want the polygon's vertex
+                verticesToRecalc.Add(polygon.Vertices.Contains(pathEdgeEntry.Value.Vertex1) ? pathEdgeEntry.Value.Vertex2 : pathEdgeEntry.Value.Vertex1);
+                polygonVisibilities.Add(pathEdgeEntry.Key);
+            }
+        }
+
+        foreach (var key in polygonVisibilities)
+        {
+            _pathEdgeDict.Remove(key);
+        }
+
+        // Move and recalculate polygon's visiblity
+        polygon.Move(moveVec);
+        foreach (var vertex in polygon.Vertices)
+        {
+            CalculateVisiblity(vertex, _allVertices);
+        }
+
+        // Polygon's newly acquired visibilities are to be recalculated from scratch,
+        // since the polygon might have obstructed their sight
+        var newVertexVisibilities = new HashSet<int>();
+        foreach (var newEdgeEntry in _pathEdgeDict)
+        {
+            if (polygon.Vertices.Contains(newEdgeEntry.Value.Vertex1) ||
+                polygon.Vertices.Contains(newEdgeEntry.Value.Vertex2))
+            {
+                var vertToRacalc = polygon.Vertices.Contains(newEdgeEntry.Value.Vertex1)
+                    ? newEdgeEntry.Value.Vertex2
+                    : newEdgeEntry.Value.Vertex1;
+
+                verticesToRecalc.Add(vertToRacalc);
+
+                // Fetch visibilities for this vertex
+                foreach (var pathEdgeEntry in _pathEdgeDict)
+                {
+                    if (pathEdgeEntry.Value.Vertex1 == vertToRacalc || pathEdgeEntry.Value.Vertex2 == vertToRacalc)
+                    {
+                        newVertexVisibilities.Add(pathEdgeEntry.Key);
+                    }
+                }
+            }
+        }
+
+        // Break off new vertex's visibilities
+        foreach (var key in newVertexVisibilities)
+        {
+            _pathEdgeDict.Remove(key);
+        }
+
+        foreach (var vertex in verticesToRecalc)
+        {
+            CalculateVisiblity(vertex, _allVertices);
+        }
+
+    }
+
+    void CalculateVisiblity(Vertex pivot, List<Vertex> allVertices)
+    {
+        var visibleVertices = GetVisibilePoints(pivot, allVertices);
+
+        foreach (var visibleVertex in visibleVertices)
+        {
+            var key = pivot.GetHashCode() ^ visibleVertex.GetHashCode();
+            if (!_pathEdgeDict.ContainsKey(key))
+            {
+                _pathEdgeDict.Add(key, new PathEdge(pivot, visibleVertex));
+            }
+        }
+    }
     
-    private List<Vertex> GetVisibilePoints(Vertex v, Polygon ownerPolygon, Vertex[] allVertices)
+    private List<Vertex> GetVisibilePoints(Vertex v, List<Vertex> allVertices)
     {
         var visiblePoints = new List<Vertex>();
         var sortedEvents = Util.SortClockwise(v.Position, allVertices);
@@ -133,7 +204,7 @@ public class Test : MonoBehaviour
                 continue;
             }
 
-            if (IsVisible(v, ownerPolygon, eventPoint))
+            if (IsVisible(v, eventPoint))
             {
                 visiblePoints.Add(eventPoint);
             }
@@ -164,27 +235,26 @@ public class Test : MonoBehaviour
         return visiblePoints;
     }
 
-    private bool IsVisible(Vertex from, Polygon ownerPolygon, Vertex to)
+    private bool IsVisible(Vertex from, Vertex to)
     {
-        // Check with if intersecting with owner polygon
-        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
-        // This check is the first one, since it has a greater probablity of eliminating further checks
-        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
-        if (ownerPolygon.IntersectsWith(nudgedFrom.x, nudgedFrom.z, to.Position.x, to.Position.z))
-        {
-            return false;
-        }
-
-        // Non-neighbor vertices of the same polygon don't see each other
-        if (ownerPolygon.Vertices.Contains(to))
-        {
-            return false;
-        }
-
         // Neighboring vertices are assumed to be seeing each other
         if (from.IsNeighborWith(to))
         {
             return true;
+        }
+
+        // Non-neighbor vertices of the same polygon don't see each other
+        if (from.OwnerPolygon.Vertices.Contains(to))
+        {
+            return false;
+        }
+
+        // Check with if intersecting with owner polygon
+        // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
+        var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
+        if (from.OwnerPolygon.IntersectsWith(nudgedFrom.x, nudgedFrom.z, to.Position.x, to.Position.z))
+        {
+            return false;
         }
 
         Edge leftMostEdge;
@@ -198,6 +268,5 @@ public class Test : MonoBehaviour
 
         return true;
     }
-
 
 }
