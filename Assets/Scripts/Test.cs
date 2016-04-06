@@ -9,36 +9,32 @@ using Pathfinding.SelfBalancedTree;
 using UnityEditor;
 #endif
 
-public class PathEdge : IEquatable<PathEdge>
-{
-    public Vertex Vertex1 { get; private set; }
-    public Vertex Vertex2 { get; private set; }
-
-    public PathEdge(Vertex v1, Vertex v2)
-    {
-        Vertex1 = v1;
-        Vertex2 = v2;
-    }
-
-    public bool Equals(PathEdge other)
-    {
-        return (Vertex1 == other.Vertex1 && Vertex2 == other.Vertex2)
-               || (Vertex1 == other.Vertex2 && Vertex2 == other.Vertex1);
-    }
-}
-
 public class Test : MonoBehaviour
 {
     private readonly List<Polygon> _polygons = new List<Polygon>();
     private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
     private readonly Dictionary<int, PathEdge> _pathEdgeDict = new Dictionary<int, PathEdge>(); 
     private List<GameObject> _obstacleGos = new List<GameObject>();
-
     private List<Vertex> _allVertices;
 
+    private INavigator _navigator;
 
     void Start()
     {
+        _obstacleGos = GameObject.FindGameObjectsWithTag("Obstacle").ToList();
+        _navigator = new Navigator();
+        var agents = new List<IAgent>();
+
+        var bounds = _obstacleGos.Select(x => x.GetComponent<Collider>().bounds);
+        foreach (var b in bounds)
+        {
+            agents.Add(new Agent(b));
+        }
+
+        _navigator.Init(agents.ToArray());
+
+        
+        return;
         _obstacleGos = GameObject.FindGameObjectsWithTag("Obstacle").ToList();
         foreach (var obstacleGo in _obstacleGos)
         {
@@ -80,24 +76,32 @@ public class Test : MonoBehaviour
 
         //CalculateVisiblityGraph(_allVertices);
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            MovePolygon(_polygons[0], Vector3.forward);
-            //foreach (var v in _allVertices)
-            //{
-            //    CalculateVisiblity(v, _allVertices);
-            //}
-            var a = 3;
-        }
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    MovePolygon(_polygons[0], Vector3.forward);
+        //    //foreach (var v in _allVertices)
+        //    //{
+        //    //    CalculateVisiblity(v, _allVertices);
+        //    //}
+        //    var a = 3;
+        //}
 
-        foreach (var pathEdge in _pathEdgeDict.Values)
-        {
-            Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
-        }
+        //foreach (var pathEdge in _pathEdgeDict.Values)
+        //{
+        //    Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
+        //}
+
+        
+        _navigator.Draw();
     }
 
     private void MovePolygon(Polygon polygon, Vector3 moveVec)
     {
+        if (moveVec == Vector3.zero)
+        {
+            return;
+        }
+
         // This holds vertices from the polygon's broken visibilities and newly acquired visibilities
         // Not from polygon itself
         var verticesToRecalc = new HashSet<Vertex>();

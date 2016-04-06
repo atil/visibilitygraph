@@ -5,6 +5,7 @@ namespace Pathfinding
 {
     public class Edge : IComparable<Edge>
     {
+        // Used when sorting edges according to their distance to a reference point
         public float DistanceToReference { get; set; }
 
         private readonly Vertex _vertex1;
@@ -43,7 +44,6 @@ namespace Pathfinding
             {
                 return _vertex1;
             }
-            Debug.LogError("Edge.GetOther failure");
             return null;
         }
 

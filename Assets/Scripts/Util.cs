@@ -17,72 +17,15 @@ namespace Pathfinding
         }
     }
 
-    public class VertexComparer : IComparer<Vertex>
-    {
-        public Vector3 Reference { get; set; }
-
-        public int Compare(Vertex x, Vertex y)
-        {
-            var a1 = Util.CalculateAngle(Vector3.right, x.Position - Reference);
-            var a2 = Util.CalculateAngle(Vector3.right, y.Position - Reference);
-
-            var result = a1.CompareTo(a2);
-            return result == 0 ? 1 : result;
-        }
-    }
-
     public static class Util
     {
         public static readonly DuplicateKeyComparer<float> FloatComparer;
         private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
-        private static readonly VertexComparer VertexComparer = new VertexComparer();
 
         static Util()
         {
             FloatComparer = new DuplicateKeyComparer<float>();
             AngleToPoint = new SortedList<float, Vertex>(FloatComparer);
-        }
-
-        // Taken from: http://snipd.net/quicksort-in-c
-        public static void Quicksort(IComparable[] elements, int left, int right)
-        {
-            int i = left, j = right;
-            IComparable pivot = elements[(left + right) / 2];
-
-            while (i <= j)
-            {
-                while (elements[i].CompareTo(pivot) < 0)
-                {
-                    i++;
-                }
-
-                while (elements[j].CompareTo(pivot) > 0)
-                {
-                    j--;
-                }
-
-                if (i <= j)
-                {
-                    // Swap
-                    IComparable tmp = elements[i];
-                    elements[i] = elements[j];
-                    elements[j] = tmp;
-
-                    i++;
-                    j--;
-                }
-            }
-
-            // Recursive calls
-            if (left < j)
-            {
-                Quicksort(elements, left, j);
-            }
-
-            if (i < right)
-            {
-                Quicksort(elements, i, right);
-            }
         }
 
         public static float CalculateAngle(Vector3 from, Vector3 to)
