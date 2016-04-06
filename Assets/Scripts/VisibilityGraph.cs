@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using Pathfinding.SelfBalancedTree;
 using UnityEngine;
 
@@ -38,19 +35,19 @@ namespace Pathfinding
 
             foreach (var touchingVertex in touchingVertices)
             {
-                RemoveVertex(touchingVertex);
+                RemoveEdgesOfVertex(touchingVertex);
             }
 
-            foreach (var touchingEdge in touchingVertices)
+            foreach (var touchingVertex in touchingVertices)
             {
-                CalculateVisiblityForVertex(touchingEdge, _allVertices);
+                CalculateVisiblityForVertex(touchingVertex, _allVertices);
             }
         }
 
-        private void RemoveVertex(Vertex vertex)
+        private void RemoveEdgesOfVertex(Vertex vertex)
         {
+            // Remove the edges of which the vertex is element of
             var edgeKeys = new HashSet<int>();
-
             foreach (var pathEdgeEntry in _pathEdgeDict)
             {
                 if (pathEdgeEntry.Value.Vertex1 == vertex || pathEdgeEntry.Value.Vertex2 == vertex)
@@ -67,21 +64,66 @@ namespace Pathfinding
 
         public void RemovePolygon(Polygon polygon)
         {
+            // Remove the polygon's edges and recalculate the polygon's neighbors
+            var touchingVertices = GetTouchingVertices(polygon);
+
+            foreach (var vertex in polygon.Vertices)
+            {
+                RemoveEdgesOfVertex(vertex);
+            }
+
             _polygons.Remove(polygon);
             foreach (var v in polygon.Vertices)
             {
                 _allVertices.Remove(v);
             }
+
+            foreach (var touchingVertex in touchingVertices)
+            {
+                CalculateVisiblityForVertex(touchingVertex, _allVertices);
+            }
+
         }
 
         public void MovePolygon(Polygon polygon, Vector3 moveVec)
         {
-            // TODO
+            // Store the polygon's existing neighbors
+            var touchingVertices = GetTouchingVertices(polygon);
+
+            // Remove the polygon's edges
+            foreach (var vertex in polygon.Vertices)
+            {
+                RemoveEdgesOfVertex(vertex);
+            }
+
+            // Move polygon and calculate visibility for it
+            polygon.Move(moveVec);
+            foreach (var vertex in polygon.Vertices)
+            {
+                CalculateVisiblityForVertex(vertex, _allVertices);
+            }
+
+            // Append the polygon's new neighbors
+            foreach (var touchingVertex in GetTouchingVertices(polygon))
+            {
+                touchingVertices.Add(touchingVertex);
+            }
+
+            // Recalculate touching vertices
+            foreach (var touchingVertex in touchingVertices)
+            {
+                RemoveEdgesOfVertex(touchingVertex);
+            }
+
+            foreach (var touchingVertex in touchingVertices)
+            {
+                CalculateVisiblityForVertex(touchingVertex, _allVertices);
+            }
         }
 
-        private List<Vertex> GetTouchingVertices(Polygon polygon)
+        private HashSet<Vertex> GetTouchingVertices(Polygon polygon)
         {
-            var retVal = new List<Vertex>();
+            var retVal = new HashSet<Vertex>();
             foreach (var pathEdge in _pathEdgeDict.Values)
             {
                 if (polygon.Vertices.Contains(pathEdge.Vertex1)

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Pathfinding
 {
@@ -12,6 +8,7 @@ namespace Pathfinding
     {
         event OnPolygonMove OnPolygonMove;
         Polygon Polygon { get; }
+        void Update(Vector3 curPos);
     }
 
     public class Agent : IAgent
@@ -20,13 +17,32 @@ namespace Pathfinding
 
         public Polygon Polygon { get; private set; }
 
+        private Vector3 _lastPosition;
+        private Vector3 _currentPosition;
+
         public Agent(Vector3[] vertices)
         {
             Polygon = new Polygon(vertices);
         }
 
-        public Agent(Bounds b) : this(GetFloor(b))
+        public Agent(Bounds b, Vector3 initPos) : this(GetFloor(b))
         {
+            _lastPosition = _currentPosition = initPos;
+        }
+
+        public void Update(Vector3 curPos)
+        {
+            _currentPosition = curPos;
+
+            if (Vector3.Distance(_currentPosition, _lastPosition) > 0.001)
+            {
+                if (OnPolygonMove != null)
+                {
+                    OnPolygonMove(this, _currentPosition - _lastPosition);
+                }
+            }
+
+            _lastPosition = _currentPosition;
         }
 
         private static Vector3[] GetFloor(Bounds b)
