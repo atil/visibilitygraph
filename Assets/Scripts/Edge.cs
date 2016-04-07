@@ -54,6 +54,14 @@ namespace Pathfinding
 
         public bool IntersectsWith(float o1X, float o1Z, float o2X, float o2Z)
         {
+            // Edge intersection excludes vertices
+            // Nudge positions a little towards each other
+            // so that they won't overlap with this edge's vertices
+            o1X += Mathf.Sign(o2X - o1X) * 0.0001f;
+            o1Z += Mathf.Sign(o2Z - o1Z) * 0.0001f;
+            o2X -= Mathf.Sign(o2X - o1X) * 0.0001f;
+            o2Z -= Mathf.Sign(o2Z - o1Z) * 0.0001f;
+
             // Stolen from: http://yunus.hacettepe.edu.tr/~burkay.genc/courses/bca608/slides/week3.pdf
             return (Util.Left(_v1X, _v1Z, _v2X, _v2Z, o1X, o1Z)
                     ^ Util.Left(_v1X, _v1Z, _v2X, _v2Z, o2X, o2Z))

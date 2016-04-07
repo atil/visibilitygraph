@@ -44,9 +44,9 @@ namespace Pathfinding
             _visibilityGraph.MovePolygon(agent.Polygon, moveVec);
         }
         
-        public Vector3[] GetPath(Vector3 src, Vector3 dest)
+        public Vector3[] GetPath(Vector3 srcPos, Vector3 destPos)
         {
-            return new Vector3[] {};
+            return _visibilityGraph.GetPath(srcPos, destPos);
         }
 
         public void Draw()

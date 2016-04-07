@@ -4,6 +4,9 @@ using Pathfinding;
 
 public class Test : MonoBehaviour
 {
+    public Transform Source;
+    public Transform Target;
+
     private INavigator _navigator;
 
     void Start()
@@ -17,6 +20,13 @@ public class Test : MonoBehaviour
     void Update()
     {
         _navigator.Draw();
+
+        var path = _navigator.GetPath(Source.position, Target.position);
+
+        for (int i = 1; i < path.Length; i++)
+        {
+            Debug.DrawLine(path[i - 1], path[i]);
+        }
     }
 
 }

@@ -18,13 +18,13 @@ namespace Pathfinding
 
     public static class Util
     {
-        public static readonly DuplicateKeyComparer<float> FloatComparer;
+        public static readonly DuplicateKeyComparer<float> DuplicateKeyComparer;
         private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
 
         static Util()
         {
-            FloatComparer = new DuplicateKeyComparer<float>();
-            AngleToPoint = new SortedList<float, Vertex>(FloatComparer);
+            DuplicateKeyComparer = new DuplicateKeyComparer<float>();
+            AngleToPoint = new SortedList<float, Vertex>(DuplicateKeyComparer);
         }
 
         public static float CalculateAngle(Vector3 from, Vector3 to)
