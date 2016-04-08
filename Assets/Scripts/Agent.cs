@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Pathfinding
+namespace Navigation
 {
     public delegate void OnPolygonMove(IAgent agent, Vector3 moveVec);
 

@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pathfinding
+namespace Navigation
 {
     // Taken from:
     // http://stackoverflow.com/questions/5716423/c-sharp-sortable-collection-which-allows-duplicate-keys
@@ -16,15 +16,43 @@ namespace Pathfinding
         }
     }
 
+    public class VertexComparer : IComparer<Vertex>
+    {
+        public Vector3 Reference { get; set; }
+
+        public int Compare(Vertex x, Vertex y)
+        {
+            var a1 = Util.CalculateAngle(Vector3.right, x.Position - Reference);
+            var a2 = Util.CalculateAngle(Vector3.right, y.Position - Reference);
+
+            var result = a1.CompareTo(a2);
+            return result == 0 ? 1 : result;
+        }
+    }
+
+    public class FloatComparer : IComparer<float>
+    {
+        public int Compare(float x, float y)
+        {
+            var result = x.CompareTo(y);
+            return result == 0 ? 1 : result;
+        }
+    }
+
+
     public static class Util
     {
         public static readonly DuplicateKeyComparer<float> DuplicateKeyComparer;
         private static readonly SortedList<float, Vertex> AngleToPoint; // Cached for CW sorting
+        private static readonly SortedDictionary<float, Vertex> AngleToPointDict; // Cached for CW sorting
+        private static readonly VertexComparer VertexComparer = new VertexComparer();
+        private static readonly FloatComparer FloatComparer = new FloatComparer();
 
         static Util()
         {
             DuplicateKeyComparer = new DuplicateKeyComparer<float>();
             AngleToPoint = new SortedList<float, Vertex>(DuplicateKeyComparer);
+            AngleToPointDict = new SortedDictionary<float, Vertex>(FloatComparer);
         }
 
         public static float CalculateAngle(Vector3 from, Vector3 to)
@@ -36,25 +64,37 @@ namespace Pathfinding
             {
                 return angle;
             }
-            else
-            {
-                return (360 - angle) % 360;
-            }
 
+            return (360 - angle) % 360;
         }
 
-        public static bool RayLineIntersection(Ray ray, float cx, float cz, float dx, float dz, out float t)
+        public static float CalculateAngle(float x1, float z1, float x2, float z2)
+        {
+            var det = x1 * z2 - x2 * z1;
+            var dot = x1 * x2 + z1 * z2;
+
+            var angle = -Mathf.Atan2(det, dot) * Mathf.Rad2Deg;
+
+            if (angle < 0)
+            {
+                angle += 360;
+            }
+
+            return angle;
+        }
+
+        public static bool RayLineIntersection(float oX, float oZ, float dirX, float dirZ, float cx, float cz, float dx, float dz, out float t)
         {
             t = -1;
 
-            var a = ray.origin;
-            var b = ray.origin + ray.direction;
-            var bax = b.x - a.x;
-            var bay = b.z - a.z;
+            //var a = ray.origin;
+            //var b = ray.origin + ray.direction;
+            var bax = dirX;
+            var bay = dirZ;
             var dcx = dx - cx;
             var dcy = dz - cz;
-            var cax = cx - a.x;
-            var cay = cz - a.z;
+            var cax = cx - oX;
+            var cay = cz - oZ;
 
             var cross1 = (bax * dcy) - (bay * dcx);
             var cross2 = (cay * bax) - (cax * bay);
@@ -100,20 +140,27 @@ namespace Pathfinding
             return Mathf.Sqrt((projX - pX) * (projX - pX) + (projZ - pZ) * (projZ - pZ));
         }
 
-        public static Vertex[] SortClockwise(Vector3 reference, List<Vertex> points)
+        public static Vertex[] SortClockwise(float refX, float refZ, List<Vertex> points)
         {
             // TODO: This should be faster. Why is it not? Is it Unity's ancient mono version?
             //VertexComparer.Reference = reference;
-            //Array.Sort(points, VertexComparer);
-            //return points;
+            //var pointsArr = points.ToArray();
+            //Array.Sort(pointsArr, VertexComparer);
+            //return pointsArr;
 
             AngleToPoint.Clear();
-            foreach (var p in points)
+            for (int i = 0; i < points.Count; i++)
             {
-                AngleToPoint.Add(CalculateAngle(Vector3.right, p.Position - reference), p);
+                AngleToPoint.Add(CalculateAngle(1f, 0f, points[i].Position.x - refX, points[i].Position.z - refZ), points[i]);
             }
             return AngleToPoint.Values.ToArray();
 
+            //AngleToPointDict.Clear();
+            //for (int i = 0; i < points.Count; i++)
+            //{
+            //    AngleToPointDict.Add(CalculateAngle(Vector3.right, points[i].Position - reference), points[i]);
+            //}
+            //return AngleToPointDict.Values.ToArray();
         }
 
         public static bool Left(float v1X, float v1Z, float v2X, float v2Z, float pX, float pZ)

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Pathfinding
+namespace Navigation
 {
     public class Edge : IComparable<Edge>
     {
@@ -47,9 +47,9 @@ namespace Pathfinding
             return null;
         }
 
-        public float DistanceTo(Vector3 p)
+        public float DistanceTo(float pX, float pZ)
         {
-            return Util.PointLineSegmentDistance(_v1X, _v1Z, _v2X, _v2Z, p.x, p.z);
+            return Util.PointLineSegmentDistance(_v1X, _v1Z, _v2X, _v2Z, pX, pZ);
         }
 
         public bool IntersectsWith(float o1X, float o1Z, float o2X, float o2Z)
@@ -70,9 +70,9 @@ namespace Pathfinding
                     ^ Util.Left(o1X, o1Z, o2X, o2Z, _v2X, _v2Z));
         }
 
-        public bool IntersectsWith(Ray ray, out float t)
+        public bool IntersectsWith(float oX, float oZ, float dirX, float dirZ, out float t)
         {
-            return Util.RayLineIntersection(ray, _v1X, _v1Z, _v2X, _v2Z, out t);
+            return Util.RayLineIntersection(oX, oZ, dirX, dirZ, _v1X, _v1Z, _v2X, _v2Z, out t);
         }
 
         public int CompareTo(Edge other)

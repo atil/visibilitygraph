@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Linq;
-using Pathfinding;
+using Navigation;
 
 public class Test : MonoBehaviour
 {

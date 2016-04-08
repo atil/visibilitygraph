@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using Pathfinding;
+using Navigation;
 
 public class TestAgentView : MonoBehaviour
 {

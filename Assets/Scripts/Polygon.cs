@@ -2,20 +2,29 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pathfinding
+namespace Navigation
 {
     public class Polygon
     {
         public readonly List<Vertex> Vertices;
-        public readonly Edge[] Edges; 
+        public readonly Edge[] Edges;
+        public float RightmostX { get; private set; }
+
+        // Duplicate data, but fast Contains() is needed
+        private readonly HashSet<Vertex> _verticesSet; 
 
         public Polygon(Vector3[] vertices)
         {
+            RightmostX = float.MinValue;
             Vertices = new List<Vertex>();
             Edges = new Edge[vertices.Length];
 
             foreach (var v in vertices)
             {
+                if (v.x > RightmostX)
+                {
+                    RightmostX = v.x;
+                }
                 Vertices.Add(new Vertex(v, this));
             }
 
@@ -38,6 +47,13 @@ namespace Pathfinding
             }
 
             Edges[vertices.Length - 1] = eLast;
+
+            _verticesSet = new HashSet<Vertex>(Vertices);
+        }
+
+        public bool HasVertex(Vertex v)
+        {
+            return _verticesSet.Contains(v);
         }
 
         public void WarpTo(Vector3[] newPositions)

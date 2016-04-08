@@ -24,7 +24,7 @@
 
 #define TREE_WITH_CONCAT_AND_SPLIT_OPERATIONS
 
-namespace Pathfinding.SelfBalancedTree
+namespace Navigation.SelfBalancedTree
 {
     using System;
     using System.Collections.Generic;

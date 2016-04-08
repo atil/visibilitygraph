@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Pathfinding
+namespace Navigation
 {
     public interface INavigator
     {

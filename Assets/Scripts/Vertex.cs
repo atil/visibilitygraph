@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Pathfinding
+namespace Navigation
 {
     public class Vertex
     {
@@ -86,18 +86,18 @@ namespace Pathfinding
         }
 
         // TODO: Cache those values
-        public Edge[] GetEdgesOnCwSide(Vertex reference) // Clockwise
+        public Edge[] GetEdgesOnCwSide(float refX, float refZ) // Clockwise
         {
             var retVal = new Edge[2];
 
-            var x1 = Position.x - reference.Position.x;
-            var z1 = Position.z - reference.Position.z;
+            var x1 = Position.x - refX;
+            var z1 = Position.z - refZ;
 
-            var x2 = _neighbors[0].Position.x - reference.Position.x;
-            var z2 = _neighbors[0].Position.z - reference.Position.z;
+            var x2 = _neighbors[0].Position.x - refX;
+            var z2 = _neighbors[0].Position.z - refZ;
 
-            var x3 = _neighbors[1].Position.x - reference.Position.x;
-            var z3 = _neighbors[1].Position.z - reference.Position.z;
+            var x3 = _neighbors[1].Position.x - refX;
+            var z3 = _neighbors[1].Position.z - refZ;
 
             var cross1 = (x1 * z2) - (x2 * z1);
             var cross2 = (x1 * z3) - (x3 * z1);
@@ -115,18 +115,18 @@ namespace Pathfinding
             return retVal;
         }
 
-        public Edge[] GetEdgesOnCCwSide(Vertex reference) // Counterclockwise
+        public Edge[] GetEdgesOnCCwSide(float refX, float refZ) // Counterclockwise
         {
             var retVal = new Edge[2];
 
-            var x1 = Position.x - reference.Position.x;
-            var z1 = Position.z - reference.Position.z;
+            var x1 = Position.x - refX;
+            var z1 = Position.z - refZ;
 
-            var x2 = _neighbors[0].Position.x - reference.Position.x;
-            var z2 = _neighbors[0].Position.z - reference.Position.z;
+            var x2 = _neighbors[0].Position.x - refX;
+            var z2 = _neighbors[0].Position.z - refZ;
 
-            var x3 = _neighbors[1].Position.x - reference.Position.x;
-            var z3 = _neighbors[1].Position.z - reference.Position.z;
+            var x3 = _neighbors[1].Position.x - refX;
+            var z3 = _neighbors[1].Position.z - refZ;
 
             var cross1 = (x1 * z2) - (x2 * z1);
             var cross2 = (x1 * z3) - (x3 * z1);
