@@ -30,6 +30,13 @@ namespace Pathfinding
             var eLast = new Edge(Vertices.Last(), Vertices[0]);
             Vertices.Last().Edge1 = eLast;
             Vertices[0].Edge2 = eLast;
+
+            // Edges are in place, calculate normals
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                Vertices[i].CalculateNormal();
+            }
+
             Edges[vertices.Length - 1] = eLast;
         }
 

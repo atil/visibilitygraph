@@ -54,8 +54,8 @@ namespace Pathfinding
 
         public bool IntersectsWith(float o1X, float o1Z, float o2X, float o2Z)
         {
-            // Edge intersection excludes vertices
-            // Nudge positions a little towards each other
+            // Edge intersection excludes vertices.
+            // Nudge positions a little towards each other,
             // so that they won't overlap with this edge's vertices
             o1X += Mathf.Sign(o2X - o1X) * 0.0001f;
             o1Z += Mathf.Sign(o2Z - o1Z) * 0.0001f;
@@ -84,7 +84,6 @@ namespace Pathfinding
 
             return DistanceToReference.CompareTo(other.DistanceToReference);
         }
-
 
         public override string ToString()
         {

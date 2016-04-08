@@ -7,6 +7,9 @@ namespace Pathfinding
     {
         public Vector3 Position { get; private set; }
 
+        public float NormalX { get; private set; }
+        public float NormalZ { get; private set; }
+
         private Edge _edge1;
         private Edge _edge2;
         private readonly Vertex[] _neighbors = new Vertex[2];
@@ -46,10 +49,25 @@ namespace Pathfinding
         public List<Edge> ClockwiseEdges;
         public List<Edge> CounterclockwiseEdges;
 
-        public Vertex(Vector3 pos, Polygon ownerPolygon)
+        public Vertex(Vector3 pos)
         {
             Position = pos;
+        }
+
+        public Vertex(Vector3 pos, Polygon ownerPolygon) : this(pos)
+        {
             _ownerPolygon = ownerPolygon;
+        }
+
+        public void CalculateNormal()
+        {
+            var p1 = Position - _neighbors[0].Position;
+            var p2 = Position - _neighbors[1].Position;
+
+            var n = (Position + p1 + p2).normalized;
+            NormalX = n.x;
+            NormalZ = n.z;
+
         }
 
         public void WarpTo(Vector3 pos)
@@ -67,6 +85,7 @@ namespace Pathfinding
             return _neighbors[0] == v || _neighbors[1] == v;
         }
 
+        // TODO: Cache those values
         public Edge[] GetEdgesOnCwSide(Vertex reference) // Clockwise
         {
             var retVal = new Edge[2];

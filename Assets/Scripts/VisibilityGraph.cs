@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Pathfinding.SelfBalancedTree;
 using UnityEngine;
 
@@ -9,7 +11,11 @@ namespace Pathfinding
         private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
         private readonly List<Polygon> _polygons = new List<Polygon>();
         private readonly List<Vertex> _allVertices = new List<Vertex>();
-        private readonly Dictionary<int, PathEdge> _pathEdgeDict = new Dictionary<int, PathEdge>();
+        private readonly Dictionary<Vertex, List<Vertex>> _adjList = new Dictionary<Vertex, List<Vertex>>();
+
+        // Cached for pathfinding
+        private readonly Dictionary<Vertex, float> _distances = new Dictionary<Vertex, float>();
+        private readonly Dictionary<Vertex, Vertex> _prevs = new Dictionary<Vertex, Vertex>();
 
         public void AddPolygon(Polygon polygon)
         {
@@ -22,6 +28,8 @@ namespace Pathfinding
             foreach (var v in polygon.Vertices)
             {
                 _allVertices.Add(v);
+
+                _adjList.Add(v, new List<Vertex>());
             }
 
             // Place polygon
@@ -58,6 +66,7 @@ namespace Pathfinding
             foreach (var v in polygon.Vertices)
             {
                 _allVertices.Remove(v);
+                _adjList.Remove(v);
             }
 
             foreach (var touchingVertex in touchingVertices)
@@ -73,16 +82,16 @@ namespace Pathfinding
             var touchingVertices = GetTouchingVertices(polygon);
 
             // Remove the polygon's edges
-            foreach (var vertex in polygon.Vertices)
+            for (var i = 0; i < polygon.Vertices.Count; i++)
             {
-                RemoveEdgesOfVertex(vertex);
+                RemoveEdgesOfVertex(polygon.Vertices[i]);
             }
 
             // Move polygon and calculate visibility for it
             polygon.Move(moveVec);
-            foreach (var vertex in polygon.Vertices)
+            for (var i = 0; i < polygon.Vertices.Count; i++)
             {
-                CalculateVisiblityForVertex(vertex, _allVertices);
+                CalculateVisiblityForVertex(polygon.Vertices[i], _allVertices);
             }
 
             // Append the polygon's new neighbors
@@ -105,67 +114,50 @@ namespace Pathfinding
 
         private void RemoveEdgesOfVertex(Vertex vertex)
         {
-            // Remove the edges of which the vertex is element of
-            var edgeKeys = new HashSet<int>();
-            foreach (var pathEdgeEntry in _pathEdgeDict)
+            foreach (var vertexNeighbor in _adjList[vertex])
             {
-                if (pathEdgeEntry.Value.Vertex1 == vertex || pathEdgeEntry.Value.Vertex2 == vertex)
-                {
-                    edgeKeys.Add(pathEdgeEntry.Key);
-                }
+                _adjList[vertexNeighbor].Remove(vertex);
             }
-
-            foreach (var edgeKey in edgeKeys)
-            {
-                _pathEdgeDict.Remove(edgeKey);
-            }
+           
         }
 
         private HashSet<Vertex> GetTouchingVertices(Polygon polygon)
         {
             var retVal = new HashSet<Vertex>();
-            foreach (var pathEdge in _pathEdgeDict.Values)
+            foreach (var vertex in polygon.Vertices)
             {
-                if (polygon.Vertices.Contains(pathEdge.Vertex1)
-                    && !polygon.Vertices.Contains(pathEdge.Vertex2))
+                foreach (var vertexNeighbor in _adjList[vertex])
                 {
-                    retVal.Add(pathEdge.Vertex2);
-                }
-
-                if (polygon.Vertices.Contains(pathEdge.Vertex2)
-                    && !polygon.Vertices.Contains(pathEdge.Vertex1))
-                {
-                    retVal.Add(pathEdge.Vertex1);
+                    if (!polygon.Vertices.Contains(vertexNeighbor))
+                    {
+                        retVal.Add(vertexNeighbor);
+                    }
                 }
             }
 
             return retVal;
+            
         }
 
         private void CalculateVisiblityForVertex(Vertex pivot, List<Vertex> allVertices)
         {
-            var visibleVertices = GetVisibilePoints(pivot, allVertices);
-
-            foreach (var visibleVertex in visibleVertices)
-            {
-                var key = pivot.GetHashCode() ^ visibleVertex.GetHashCode();
-                if (!_pathEdgeDict.ContainsKey(key))
-                {
-                    _pathEdgeDict.Add(key, new PathEdge(pivot, visibleVertex));
-                }
-            }
+            var result = _adjList[pivot];
+            GetVisibilePoints(pivot, allVertices, ref result);
         }
 
-        private List<Vertex> GetVisibilePoints(Vertex v, List<Vertex> allVertices)
+        private void GetVisibilePoints(Vertex v, List<Vertex> allVertices, ref List<Vertex> result)
         {
-            var visiblePoints = new List<Vertex>();
+            result.Clear();
             var sortedEvents = Util.SortClockwise(v.Position, allVertices);
 
             var ray = new Ray(v.Position, Vector3.right);
-            foreach (var polygon in _polygons)
+
+            
+            for (var i = 0; i < _polygons.Count; i++)
             {
-                foreach (var edge in polygon.Edges)
+                for (var j = 0; j < _polygons[i].Edges.Length; j++)
                 {
+                    var edge = _polygons[i].Edges[j];
                     float t;
                     if (edge.IntersectsWith(ray, out t))
                     {
@@ -175,8 +167,10 @@ namespace Pathfinding
                 }
             }
 
-            foreach (var eventPoint in sortedEvents)
+            
+            for (var i = 0; i < sortedEvents.Length; i++)
             {
+                var eventPoint = sortedEvents[i];
                 if (eventPoint == v)
                 {
                     continue;
@@ -184,7 +178,7 @@ namespace Pathfinding
 
                 if (IsVisible(v, eventPoint))
                 {
-                    visiblePoints.Add(eventPoint);
+                    result.Add(eventPoint);
                 }
 
                 // Algorithm adds CW edges, then deletes CCW ones
@@ -210,7 +204,6 @@ namespace Pathfinding
             }
 
             _bst.Clear();
-            return visiblePoints;
         }
 
         private bool IsVisible(Vertex from, Vertex to)
@@ -222,19 +215,29 @@ namespace Pathfinding
             }
 
             // Non-neighbor vertices of the same polygon don't see each other
-            if (from.OwnerPolygon.Vertices.Contains(to))
+            if (from.OwnerPolygon != null // There will be stray vertices during pathfinding
+                && from.OwnerPolygon.Vertices.Contains(to))
             {
                 return false;
             }
 
-            // Check with if intersecting with owner polygon
-            // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
-            var nudgedFrom = from.Position + (to.Position - from.Position).normalized * 0.0001f;
-            if (from.OwnerPolygon.IntersectsWith(nudgedFrom.x, nudgedFrom.z, to.Position.x, to.Position.z))
+            // Check if "to" is behind "from"
+            // If not behind, it's certain that it won't intersect with polygon
+            // Note that this optimization works only with convex polygons
+            var dot = from.NormalX * (from.Position.x - to.Position.x) +
+                      from.NormalZ * (from.Position.z - to.Position.z);
+            if (dot < 0)
             {
-                return false;
+                // Check with if intersecting with owner polygon
+                // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
+                var nudgedX = from.Position.x - Mathf.Sign(from.Position.x - to.Position.x) * 0.0001f;
+                var nudgedZ = from.Position.z - Mathf.Sign(from.Position.z - to.Position.z) * 0.0001f;
+                if (from.OwnerPolygon != null
+                    && from.OwnerPolygon.IntersectsWith(nudgedX, nudgedZ, to.Position.x, to.Position.z))
+                {
+                    return false;
+                }
             }
-
             Edge leftMostEdge;
             _bst.GetMin(out leftMostEdge);
 
@@ -248,23 +251,6 @@ namespace Pathfinding
         }
 
         #region Shortest path
-        private Vertex GetClosestVertexTo(Vector3 p)
-        {
-            var minDistSqr = float.MaxValue;
-            var closestVertex = _allVertices[0];
-
-            foreach (var vertex in _allVertices)
-            {
-                var distSqr = (vertex.Position - p).sqrMagnitude;
-                if (distSqr < minDistSqr)
-                {
-                    closestVertex = vertex;
-                    minDistSqr = distSqr;
-                }
-            }
-
-            return closestVertex;
-        }
 
         public Vector3[] GetPath(Vector3 srcPos, Vector3 destPos)
         {
@@ -274,27 +260,34 @@ namespace Pathfinding
                 return new[] { srcPos, destPos };
             }
 
-            var srcVertex = GetClosestVertexTo(srcPos);
-            var destVertex = GetClosestVertexTo(destPos);
+            // Source and destination points are temporarily in the graph
+            var srcVertex = new Vertex(srcPos);
+            var destVertex = new Vertex(destPos);
 
-            if (srcVertex == destVertex) // Don't know this will ever be true
+            CalculateVisiblityForVertex(srcVertex, _allVertices);
+            CalculateVisiblityForVertex(destVertex, _allVertices);
+
+            // Manually set destination's neighbors
+            foreach (var destNeighbor in _adjList[destVertex])
             {
-                return new[] { srcPos, destPos };
+                _adjList[destNeighbor].Add(destVertex);
             }
 
-            // Here be Djikstra
             var allVertsCopy = new HashSet<Vertex>(_allVertices);
+            allVertsCopy.Add(srcVertex);
+            allVertsCopy.Add(destVertex);
 
-            var distances = new Dictionary<Vertex, float>();
-            var prevs = new Dictionary<Vertex, Vertex>();
+            // Here be Djikstra
+            _distances.Clear();
+            _prevs.Clear();
 
             foreach (var vertex in allVertsCopy)
             {
-                distances.Add(vertex, float.MaxValue);
-                prevs.Add(vertex, null);
+                _distances.Add(vertex, float.MaxValue);
+                _prevs.Add(vertex, null);
             }
 
-            distances[srcVertex] = 0f;
+            _distances[srcVertex] = 0f;
 
             while (allVertsCopy.Count > 0)
             {
@@ -302,9 +295,9 @@ namespace Pathfinding
                 var minDist = float.MaxValue;
                 foreach (var vertex in allVertsCopy)
                 {
-                    if (distances[vertex] < minDist)
+                    if (_distances[vertex] < minDist)
                     {
-                        minDist = distances[vertex];
+                        minDist = _distances[vertex];
                         u = vertex;
                     }
                 }
@@ -316,17 +309,22 @@ namespace Pathfinding
 
                 allVertsCopy.Remove(u);
 
-                Debug.Assert(u != null);
-                var neighbors = GetNeighbors(u, allVertsCopy);
-                foreach (var v in neighbors)
+                Debug.Assert(u != null, "Next vertex is null");
+
+                foreach (var v in _adjList[u])
                 {
+                    if (!allVertsCopy.Contains(v))
+                    {
+                        continue;
+                    }
+
                     // TODO: PathEdge's Weight should be used instead of Distance() call
                     // No need to calculate it again
-                    var altDist = distances[u] + Vector3.Distance(v.Position, u.Position); 
-                    if (altDist < distances[v])
+                    var altDist = _distances[u] + Vector3.Distance(v.Position, u.Position); 
+                    if (altDist < _distances[v])
                     {
-                        distances[v] = altDist;
-                        prevs[v] = u;
+                        _distances[v] = altDist;
+                        _prevs[v] = u;
                     }
                 }
             }
@@ -334,72 +332,19 @@ namespace Pathfinding
             var path = new List<Vector3>();
             var w = destVertex;
 
-            while (prevs[w] != null)
+            while (_prevs[w] != null)
             {
                 path.Insert(0, w.Position);
-                w = prevs[w];
+                w = _prevs[w];
             }
             path.Insert(0, w.Position);
+
+            // Remove temp vertices from graph
+            RemoveEdgesOfVertex(srcVertex);
+            RemoveEdgesOfVertex(destVertex);
             
-            return SimplifyPath(srcPos, destPos, path);
-        }
-
-        public List<Vertex> GetNeighbors(Vertex vertex, HashSet<Vertex> allVertsCopy)
-        {
-            var retVal = new List<Vertex>();
-            foreach (var pathEdge in _pathEdgeDict.Values)
-            {
-                if (pathEdge.Vertex1 == vertex
-                    && allVertsCopy.Contains(pathEdge.Vertex2))
-                {
-                    retVal.Add(pathEdge.Vertex2);
-                }
-                if (pathEdge.Vertex2 == vertex
-                    && allVertsCopy.Contains(pathEdge.Vertex1))
-                {
-                    retVal.Add(pathEdge.Vertex1);
-                }
-            }
-            return retVal;
-        }
-
-        public Vector3[] SimplifyPath(Vector3 src, Vector3 dest, List<Vector3> path)
-        {
-            if (path.Count > 2) // TODO: Not sure about this check
-            {
-                int iSrc = -1, iDest = -1;
-                for (var i = 1; i < path.Count; i++)
-                {
-                    if (IntersectsWith(src.x, src.z, path[i].x, path[i].z))
-                    {
-                        iSrc = i;
-                        break;
-                    }
-                }
-
-                for (int i = path.Count - 1, j = 0; i >= 0; i--, j++)
-                {
-                    if (IntersectsWith(dest.x, dest.z, path[i].x, path[i].z))
-                    {
-                        break;
-                    }
-                    iDest = j;
-                }
-
-                for (var i = 0; i < iSrc - 1; i++)
-                {
-                    path.RemoveAt(0);
-                }
-
-                for (var i = 0; i < iDest; i++)
-                {
-                    path.RemoveAt(path.Count - 1);
-                }
-
-            }
-
-            path.Insert(0, src);
-            path.Add(dest);
+            _adjList.Remove(srcVertex);
+            _adjList.Remove(destVertex);
 
             return path.ToArray();
         }
@@ -421,10 +366,15 @@ namespace Pathfinding
 
         public void Draw()
         {
-            foreach (var pathEdge in _pathEdgeDict.Values)
+            foreach (var vertListPair in _adjList)
             {
-                Debug.DrawLine(pathEdge.Vertex1.Position, pathEdge.Vertex2.Position, Color.red);
+                foreach (var vertex in vertListPair.Value)
+                {
+                    Debug.DrawLine(vertex.Position, vertListPair.Key.Position, Color.red);
+                }
+
             }
+
         }
     }
 }
