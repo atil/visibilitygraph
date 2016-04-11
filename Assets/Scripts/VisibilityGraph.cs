@@ -116,7 +116,7 @@ namespace Navigation
         {
             var list = _adjList[vertex];
 
-            for (int i = 0; i < list.Count; i++)
+            for (var i = 0; i < list.Count; i++)
             {
                 _adjList[list[i]].Remove(vertex);
             }
@@ -137,7 +137,6 @@ namespace Navigation
             }
 
             return retVal;
-            
         }
 
         private void CalculateVisiblityForVertex(Vertex pivot, List<Vertex> allVertices)

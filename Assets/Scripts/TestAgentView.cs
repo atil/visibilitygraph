@@ -13,7 +13,7 @@ public class TestAgentView : MonoBehaviour
         Agent = new Agent(GetComponent<BoxCollider>().bounds, _thisTransform.position);
     }
 
-    void Update()
+    public void MyUpdate()
     {
         Agent.Update(_thisTransform.position);
     }
