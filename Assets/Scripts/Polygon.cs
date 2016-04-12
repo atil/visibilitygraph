@@ -9,6 +9,8 @@ namespace Navigation
         public readonly List<Vertex> Vertices;
         public readonly Edge[] Edges;
         public float RightmostX { get; private set; }
+        public float TopmostZ { get; private set; }
+        public float BottommostZ { get; private set; }
 
         // Duplicate data, but fast Contains() is needed
         private readonly HashSet<Vertex> _verticesSet; 
@@ -16,6 +18,8 @@ namespace Navigation
         public Polygon(Vector3[] vertices)
         {
             RightmostX = float.MinValue;
+            TopmostZ = float.MinValue;
+            BottommostZ = float.MaxValue;
             Vertices = new List<Vertex>();
             Edges = new Edge[vertices.Length];
 
@@ -25,6 +29,16 @@ namespace Navigation
                 {
                     RightmostX = v.x;
                 }
+
+                if (v.z > TopmostZ)
+                {
+                    TopmostZ = v.z;
+                }
+                if (v.z < BottommostZ)
+                {
+                    BottommostZ = v.z;
+                }
+
                 Vertices.Add(new Vertex(v, this));
             }
 
@@ -77,15 +91,33 @@ namespace Navigation
 
         public void Move(Vector3 moveVec)
         {
-            foreach (var vertex in Vertices)
+            for (var i = 0; i < Vertices.Count; i++)
             {
-                vertex.Move(moveVec);
+                var v = Vertices[i];
+                var vP = v.Position;
+                if (vP.x > RightmostX)
+                {
+                    RightmostX = vP.x;
+                }
+
+                if (vP.z > TopmostZ)
+                {
+                    TopmostZ = vP.z;
+                }
+
+                if (vP.z < BottommostZ)
+                {
+                    BottommostZ = vP.z;
+                }
+
+                v.Move(moveVec);
             }
 
-            foreach (var edge in Edges)
+            for (var i = 0; i < Edges.Length; i++)
             {
-                edge.RecacheVertexPositions();
+                Edges[i].RecacheVertexPositions();
             }
+            
         }
 
         public bool IntersectsWith(float v1X, float v1Z, float v2X, float v2Z)

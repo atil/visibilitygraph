@@ -75,6 +75,11 @@ namespace Navigation
             return Util.RayLineIntersection(oX, oZ, dirX, dirZ, _v1X, _v1Z, _v2X, _v2Z, out t);
         }
 
+        public bool Left()
+        {
+            return false;
+        }
+
         public int CompareTo(Edge other)
         {
             if (other == null)

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Navigation.SelfBalancedTree;
 using UnityEngine;
 
@@ -95,9 +96,9 @@ namespace Navigation
             }
 
             // Append the polygon's new neighbors
-            foreach (var touchingVertex in GetTouchingVertices(polygon))
+            foreach (var newTouchingVertex in GetTouchingVertices(polygon))
             {
-                touchingVertices.Add(touchingVertex);
+                touchingVertices.Add(newTouchingVertex);
             }
 
             // Recalculate touching vertices
@@ -156,10 +157,12 @@ namespace Navigation
             // Init _bst with all edges that are directly to the right
             for (var i = 0; i < _polygons.Count; i++)
             {
-                // If the vertex is on the right of the polygon,
+                // If the polygon not in the trajectory of "right" ray,
                 // then it's certain that the polygon won't be in _bst initially
                 var polygon = _polygons[i];
-                if (polygon.RightmostX < vX)
+                if (polygon.RightmostX < vX
+                    || polygon.TopmostZ < vZ
+                    || polygon.BottommostZ > vZ)
                 {
                     continue;
                 }
@@ -290,7 +293,7 @@ namespace Navigation
                 _adjList[destNeighbor].Add(destVertex);
             }
 
-            var allVertsCopy = new HashSet<Vertex>(_allVertices);
+            var allVertsCopy = new HashSet<Vertex>(_allVertices); // TODO: Making it a list will be faster?
             allVertsCopy.Add(srcVertex);
             allVertsCopy.Add(destVertex);
 
@@ -328,8 +331,10 @@ namespace Navigation
 
                 Debug.Assert(u != null, "Next vertex is null");
 
-                foreach (var v in _adjList[u])
+                for (var i = 0; i < _adjList[u].Count; i++)
                 {
+                    var v = _adjList[u][i];
+                
                     if (!allVertsCopy.Contains(v))
                     {
                         continue;

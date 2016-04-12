@@ -11,6 +11,7 @@ public class TestAgentView : MonoBehaviour
     {
         _thisTransform = transform;
         Agent = new Agent(GetComponent<BoxCollider>().bounds, _thisTransform.position);
+        GetComponent<Renderer>().enabled = false;
     }
 
     public void MyUpdate()
