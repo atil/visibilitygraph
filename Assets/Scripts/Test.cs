@@ -60,12 +60,12 @@ public class Test : MonoBehaviour
         //    testAgentView.MyUpdate();
         //}
 
-        //var path = _navigator.GetPath(Source.position, Target.position);
+        var path = _navigator.GetPath(Source.position, Target.position);
 
-        //for (int i = 1; i < path.Length; i++)
-        //{
-        //    Debug.DrawLine(path[i - 1], path[i]);
-        //}
+        for (int i = 1; i < path.Length; i++)
+        {
+            Debug.DrawLine(path[i - 1], path[i]);
+        }
     }
 
 }

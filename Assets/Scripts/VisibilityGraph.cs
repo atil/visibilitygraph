@@ -278,6 +278,8 @@ namespace Navigation
             // Source and destination points are temporarily in the graph
             var srcVertex = new Vertex(srcPos);
             var destVertex = new Vertex(destPos);
+            _adjList.Add(srcVertex, new List<Vertex>());
+            _adjList.Add(destVertex, new List<Vertex>());
 
             CalculateVisiblityForVertex(srcVertex, _allVertices);
             CalculateVisiblityForVertex(destVertex, _allVertices);
@@ -335,6 +337,7 @@ namespace Navigation
 
                     // TODO: PathEdge's Weight should be used instead of Distance() call
                     // No need to calculate it again
+                    // TODO: Maybe sqrDistance?
                     var altDist = _distances[u] + Vector3.Distance(v.Position, u.Position); 
                     if (altDist < _distances[v])
                     {
