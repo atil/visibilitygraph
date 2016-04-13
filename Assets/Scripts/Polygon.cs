@@ -12,9 +12,6 @@ namespace Navigation
         public float TopmostZ { get; private set; }
         public float BottommostZ { get; private set; }
 
-        // Duplicate data, but fast Contains() is needed
-        private readonly HashSet<Vertex> _verticesSet; 
-
         public Polygon(Vector3[] vertices)
         {
             RightmostX = float.MinValue;
@@ -61,13 +58,6 @@ namespace Navigation
             }
 
             Edges[vertices.Length - 1] = eLast;
-
-            _verticesSet = new HashSet<Vertex>(Vertices);
-        }
-
-        public bool HasVertex(Vertex v)
-        {
-            return _verticesSet.Contains(v);
         }
 
         public void WarpTo(Vector3[] newPositions)

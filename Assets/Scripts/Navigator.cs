@@ -15,10 +15,12 @@ namespace Navigation
     public class Navigator : INavigator
     {
         private readonly List<IAgent> _agents = new List<IAgent>();
-        private readonly VisibilityGraph _visibilityGraph = new VisibilityGraph();
+        private VisibilityGraph _visibilityGraph;
 
         public void Init(IAgent[] agents)
         {
+            _visibilityGraph = new VisibilityGraph();
+
             foreach (var agent in agents)
             {
                 RegisterAgent(agent);

@@ -9,6 +9,7 @@ namespace Navigation
 {
     public class VisibilityGraph
     {
+        private readonly Polygon _referencePolygon;
         private readonly AVLTree<Edge> _bst = new AVLTree<Edge>();
         private readonly List<Polygon> _polygons = new List<Polygon>();
         private readonly List<Vertex> _allVertices = new List<Vertex>();
@@ -17,6 +18,15 @@ namespace Navigation
         // Cached for pathfinding
         private readonly Dictionary<Vertex, float> _distances = new Dictionary<Vertex, float>();
         private readonly Dictionary<Vertex, Vertex> _prevs = new Dictionary<Vertex, Vertex>();
+
+
+        public VisibilityGraph(Polygon referencePolygon = null)
+        {
+            if (referencePolygon != null)
+            {
+                _referencePolygon = referencePolygon;
+            }
+        }
 
         public void AddPolygon(Polygon polygon)
         {
@@ -227,25 +237,25 @@ namespace Navigation
                 return true;
             }
 
-            // Non-neighbor vertices of the same polygon don't see each other
-            if (from.OwnerPolygon != null // There will be stray vertices during pathfinding
-                && from.OwnerPolygon.HasVertex(to))
-            {
-                return false;
-            }
-
             var fromX = from.Position.x;
             var fromZ = from.Position.z;
             var toX = to.Position.x;
             var toZ = to.Position.z;
 
+            // from-to ray shouldn't go through the polygon
+            if (from.OwnerPolygon != null // There will be stray vertices during pathfinding
+                && from.IsGoingBetweenNeighbors(toX, toZ))
+            {
+                return false;
+            }
+
+            // Note that this optimization works only with convex polygons
             // Check if "to" is behind "from"
             // If not behind, it's certain that it won't intersect with polygon
-            // Note that this optimization works only with convex polygons
-            var dot = from.NormalX * (fromX - toX) +
-                      from.NormalZ * (fromZ - toZ);
-            if (dot < 0)
-            {
+            //var dot = from.NormalX * (fromX - toX) +
+            //          from.NormalZ * (fromZ - toZ);
+            //if (dot < 0)
+            //{
                 // Check with if intersecting with owner polygon
                 // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
                 var nudgedX = fromX - Mathf.Sign(fromX - toX) * 0.0001f;
@@ -255,7 +265,8 @@ namespace Navigation
                 {
                     return false;
                 }
-            }
+            //}
+
             Edge leftMostEdge;
             _bst.GetMin(out leftMostEdge);
 
