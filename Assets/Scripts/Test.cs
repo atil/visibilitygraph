@@ -30,7 +30,7 @@ public class Test : MonoBehaviour
             }
         }
         var concaveAgentView = ConcaveParent.GetComponent<TestAgentView>();
-        concaveAgentView.Agent = new Agent(children.ToArray());
+        concaveAgentView.Agent = new Agent(children.ToArray(), concaveAgentView.transform.position);
 
         _navigator = new Navigator();
         _views = FindObjectsOfType<TestAgentView>();

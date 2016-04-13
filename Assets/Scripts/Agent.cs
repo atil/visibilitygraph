@@ -20,14 +20,14 @@ namespace Navigation
         private Vector3 _lastPosition;
         private Vector3 _currentPosition;
 
-        public Agent(Vector3[] vertices)
+        public Agent(Vector3[] vertices, Vector3 initPos)
         {
             Polygon = new Polygon(vertices);
+            _lastPosition = _currentPosition = initPos;
         }
 
-        public Agent(Bounds b, Vector3 initPos) : this(GetFloor(b))
+        public Agent(Bounds b, Vector3 initPos) : this(GetFloor(b), initPos)
         {
-            _lastPosition = _currentPosition = initPos;
         }
 
         public void Update(Vector3 curPos)
