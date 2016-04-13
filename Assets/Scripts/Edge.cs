@@ -27,10 +27,10 @@ namespace Navigation
 
         public void RecacheVertexPositions()
         {
-            _v1X = _vertex1.Position.x;
-            _v1Z = _vertex1.Position.z;
-            _v2X = _vertex2.Position.x;
-            _v2Z = _vertex2.Position.z;
+            _v1X = _vertex1.X;
+            _v1Z = _vertex1.Z;
+            _v2X = _vertex2.X;
+            _v2Z = _vertex2.Z;
         }
 
         public Vertex GetOther(Vertex v)

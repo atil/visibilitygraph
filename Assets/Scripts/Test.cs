@@ -20,6 +20,18 @@ public class Test : MonoBehaviour
 
     void Start()
     {
+
+        var children = new List<Vector3>();
+        foreach (Transform t in ConcaveParent)
+        {
+            if (t.gameObject.activeSelf)
+            {
+                children.Add(t.position);
+            }
+        }
+        var concaveAgentView = ConcaveParent.GetComponent<TestAgentView>();
+        concaveAgentView.Agent = new Agent(children.ToArray());
+
         _navigator = new Navigator();
         _views = FindObjectsOfType<TestAgentView>();
         var agents = FindObjectsOfType<TestAgentView>().Select(x => x.Agent).ToArray();
@@ -62,12 +74,12 @@ public class Test : MonoBehaviour
         //    testAgentView.MyUpdate();
         //}
 
-        var path = _navigator.GetPath(Source.position, Target.position);
+        //var path = _navigator.GetPath(Source.position, Target.position);
 
-        for (int i = 1; i < path.Length; i++)
-        {
-            Debug.DrawLine(path[i - 1], path[i]);
-        }
+        //for (int i = 1; i < path.Length; i++)
+        //{
+        //    Debug.DrawLine(path[i - 1], path[i]);
+        //}
     }
 
 }

@@ -151,7 +151,7 @@ namespace Navigation
             AngleToPoint.Clear();
             for (int i = 0; i < points.Count; i++)
             {
-                AngleToPoint.Add(CalculateAngle(1f, 0f, points[i].Position.x - refX, points[i].Position.z - refZ), points[i]);
+                AngleToPoint.Add(CalculateAngle(1f, 0f, points[i].X - refX, points[i].Z - refZ), points[i]);
             }
             return AngleToPoint.Values.ToArray();
 

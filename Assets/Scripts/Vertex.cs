@@ -68,10 +68,20 @@ namespace Navigation
 
         public void CalculateNormal()
         {
-            var p1 = Position - _neighbors[0].Position;
-            var p2 = Position - _neighbors[1].Position;
+            var p1From = _neighbors[0].Position - Position;
+            var p1To = Position - _neighbors[0].Position;
+            var p2From = _neighbors[1].Position - Position;
+            var p2To = Position - _neighbors[1].Position;
 
-            var n = (Position + p1 + p2).normalized;
+            // Concaveness is determined by the angle between directed edges
+            var isConcaveVertex = Util.CalculateAngle(p2To, p1From) > 180;
+
+            // Concave vertex normal is found by summation of outgoing edges,
+            // whereas convex one's is found by incoming
+            var n = isConcaveVertex
+                ? (p1From.normalized + p2From.normalized).normalized
+                : (p1To.normalized + p2To.normalized).normalized;
+
             NormalX = n.x;
             NormalZ = n.z;
             // Note that this normal doesn't change with polygon movement
@@ -105,7 +115,7 @@ namespace Navigation
             // ... but we want the one going through the polygon
             var dot = (oX - X) * NormalX + (oZ - Z) * NormalZ;
 
-            return btwn && dot < 0;
+            return !(btwn && dot > 0);
 
         }
 

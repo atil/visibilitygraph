@@ -158,8 +158,8 @@ namespace Navigation
 
         private void GetVisibilePoints(Vertex v, List<Vertex> allVertices, ref List<Vertex> result)
         {
-            var vX = v.Position.x;
-            var vZ = v.Position.z;
+            var vX = v.X;
+            var vZ = v.Z;
 
             result.Clear();
             var sortedEvents = Util.SortClockwise(vX, vZ, allVertices);
@@ -237,10 +237,10 @@ namespace Navigation
                 return true;
             }
 
-            var fromX = from.Position.x;
-            var fromZ = from.Position.z;
-            var toX = to.Position.x;
-            var toZ = to.Position.z;
+            var fromX = from.X;
+            var fromZ = from.Z;
+            var toX = to.X;
+            var toZ = to.Z;
 
             // from-to ray shouldn't go through the polygon
             if (from.OwnerPolygon != null // There will be stray vertices during pathfinding

@@ -10,9 +10,13 @@ public class TestAgentView : MonoBehaviour
     void Awake()
     {
         _thisTransform = transform;
-        Agent = new Agent(GetComponent<BoxCollider>().bounds, _thisTransform.position);
-        GetComponent<Renderer>().enabled = false;
+
+        if (GetComponent<BoxCollider>() != null)
+        {
+            Agent = new Agent(GetComponent<BoxCollider>().bounds, _thisTransform.position);
+        }
     }
+
 
     public void MyUpdate()
     {

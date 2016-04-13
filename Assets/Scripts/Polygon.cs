@@ -84,20 +84,19 @@ namespace Navigation
             for (var i = 0; i < Vertices.Count; i++)
             {
                 var v = Vertices[i];
-                var vP = v.Position;
-                if (vP.x > RightmostX)
+                if (v.X > RightmostX)
                 {
-                    RightmostX = vP.x;
+                    RightmostX = v.X;
                 }
 
-                if (vP.z > TopmostZ)
+                if (v.Z > TopmostZ)
                 {
-                    TopmostZ = vP.z;
+                    TopmostZ = v.Z;
                 }
 
-                if (vP.z < BottommostZ)
+                if (v.Z < BottommostZ)
                 {
-                    BottommostZ = vP.z;
+                    BottommostZ = v.Z;
                 }
 
                 v.Move(moveVec);
