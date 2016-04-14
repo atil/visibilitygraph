@@ -11,7 +11,6 @@ public class Test : MonoBehaviour
 
     private INavigator _navigator;
 
-
     void Start()
     {
         _navigator = new Navigator();
@@ -21,34 +20,42 @@ public class Test : MonoBehaviour
 
         foreach (var agentGo in agentsGos)
         {
-            var vertexPositions = new List<Vector3>();
-            foreach (Transform t in agentGo.transform.Find("Vertices"))
-            {
-                vertexPositions.Add(t.position);
-            }
-
-            // Init model first
-            var agent = new Agent(vertexPositions.ToArray(), agentGo.transform.position);
-            agents.Add(agent);
-
-            var view = agentGo.AddComponent<AgentView>();
-            view.Agent = agent;
+            agents.Add(InstantiateAgent(agentGo));
         }
 
         _navigator.Init(agents.ToArray());
+    }
+
+    private Agent InstantiateAgent(GameObject agentGo)
+    {
+        var vertexPositions = new List<Vector3>();
+        foreach (Transform t in agentGo.transform.Find("Vertices"))
+        {
+            vertexPositions.Add(t.position);
+        }
+
+        // Init model first
+        var agent = new Agent(vertexPositions.ToArray(), agentGo.transform.position);
+
+        var view = agentGo.GetComponent<AgentView>() ?? agentGo.AddComponent<AgentView>();
+        view.Agent = agent;
+
+        return agent;
     }
 
     void Update()
     {
         _navigator.Update();
         _navigator.Draw();
-       
-        //var path = _navigator.GetPath(Source.position, Target.position);
 
-        //for (int i = 1; i < path.Length; i++)
-        //{
-        //    Debug.DrawLine(path[i - 1], path[i]);
-        //}
+        var path = _navigator.GetPath(Source.position, Target.position);
+
+        for (int i = 1; i < path.Length; i++)
+        {
+            Debug.DrawLine(path[i - 1], path[i]);
+        }
+
+       
     }
 
 }

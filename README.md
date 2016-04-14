@@ -9,6 +9,8 @@ Lee's visibility graph implementation in Unity
 
 - Works strictly on XZ plane
 
-- Lots of functions are called with float x,y,z parameters and not with Vector3, because passing a struct value this many times really seems to cripple the performance
+- Lots of functions are called with float x,y,z parameters and not with Vector3, because passing a struct value this many times really seems to cripple the performance (doesn't make any sense?)
 
 - Using AVL tree from : https://code.google.com/archive/p/self-balancing-avl-tree/
+
+- Polygon intersection is not handled (yet)

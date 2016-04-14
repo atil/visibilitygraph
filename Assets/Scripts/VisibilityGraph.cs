@@ -249,23 +249,15 @@ namespace Navigation
                 return false;
             }
 
-            // Note that this optimization works only with convex polygons
-            // Check if "to" is behind "from"
-            // If not behind, it's certain that it won't intersect with polygon
-            //var dot = from.NormalX * (fromX - toX) +
-            //          from.NormalZ * (fromZ - toZ);
-            //if (dot < 0)
-            //{
-                // Check with if intersecting with owner polygon
-                // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
-                var nudgedX = fromX - Mathf.Sign(fromX - toX) * 0.0001f;
-                var nudgedZ = fromZ - Mathf.Sign(fromZ - toZ) * 0.0001f;
-                if (from.OwnerPolygon != null
-                    && from.OwnerPolygon.IntersectsWith(nudgedX, nudgedZ, toX, toZ))
-                {
-                    return false;
-                }
-            //}
+            // Check with if intersecting with owner polygon
+            // Nudge a little bit away from polygon, so it won't intersect with neighboring edges
+            var nudgedX = fromX - Mathf.Sign(fromX - toX) * 0.0001f;
+            var nudgedZ = fromZ - Mathf.Sign(fromZ - toZ) * 0.0001f;
+            if (from.OwnerPolygon != null
+                && from.OwnerPolygon.IntersectsWith(nudgedX, nudgedZ, toX, toZ))
+            {
+                return false;
+            }
 
             Edge leftMostEdge;
             _bst.GetMin(out leftMostEdge);
@@ -340,8 +332,6 @@ namespace Navigation
 
                 allVertsCopy.Remove(u);
 
-                Debug.Assert(u != null, "Next vertex is null");
-
                 for (var i = 0; i < _adjList[u].Count; i++)
                 {
                     var v = _adjList[u][i];
@@ -351,10 +341,7 @@ namespace Navigation
                         continue;
                     }
 
-                    // TODO: PathEdge's Weight should be used instead of Distance() call
-                    // No need to calculate it again
-                    // TODO: Maybe sqrDistance?
-                    var altDist = _distances[u] + Vector3.Distance(v.Position, u.Position); 
+                    var altDist = _distances[u] + (v.X * v.X + v.Z * v.Z);  // sqr distance
                     if (altDist < _distances[v])
                     {
                         _distances[v] = altDist;
@@ -376,7 +363,6 @@ namespace Navigation
             // Remove temp vertices from graph
             RemoveEdgesOfVertex(srcVertex);
             RemoveEdgesOfVertex(destVertex);
-            
             _adjList.Remove(srcVertex);
             _adjList.Remove(destVertex);
 

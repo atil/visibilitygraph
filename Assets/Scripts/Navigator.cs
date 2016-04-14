@@ -72,6 +72,7 @@ namespace Navigation
 
         public void Update()
         {
+            // Update a certain bucket each tick
             var agentsToUpdate = _viewBuckets[_currentBucket];
             foreach (var agent in agentsToUpdate)
             {
