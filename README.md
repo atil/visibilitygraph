@@ -1,11 +1,13 @@
 # Visibility graph in Unity [WIP]
-de Berg's visibility graph implementation in Unity
+Lee's visibility graph implementation in Unity
 
 - Uses algorithm : http://cs.smith.edu/~streinu/Teaching/Courses/274/Spring98/Projects/Philip/fp/algVisibility.htm
 
+- More details here : http://dav.ee/papers/Visibility_Graph_Algorithm.pdf
+
 - Pathfinding uses Djikstra with adjacency list
 
-- Works strictly XZ plane
+- Works strictly on XZ plane
 
 - Lots of functions are called with float x,y,z parameters and not with Vector3, because passing a struct value this many times really seems to cripple the performance
 
