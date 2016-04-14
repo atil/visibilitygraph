@@ -7,8 +7,10 @@ namespace Navigation
     public interface IAgent
     {
         event OnPolygonMove OnPolygonMove;
+
         Polygon Polygon { get; }
-        void Update(Vector3 curPos);
+        void SetPosition(Vector3 pos);
+        void Update();
     }
 
     public class Agent : IAgent
@@ -16,6 +18,7 @@ namespace Navigation
         public event OnPolygonMove OnPolygonMove;
 
         public Polygon Polygon { get; private set; }
+        public Vector3 Position { get; set; }
 
         private Vector3 _lastPosition;
         private Vector3 _currentPosition;
@@ -26,14 +29,13 @@ namespace Navigation
             _lastPosition = _currentPosition = initPos;
         }
 
-        public Agent(Bounds b, Vector3 initPos) : this(GetFloor(b), initPos)
+        public void SetPosition(Vector3 pos)
         {
+            _currentPosition = pos;
         }
 
-        public void Update(Vector3 curPos)
+        public void Update()
         {
-            _currentPosition = curPos;
-
             if (Vector3.Distance(_currentPosition, _lastPosition) > 0.001)
             {
                 if (OnPolygonMove != null)
@@ -43,18 +45,6 @@ namespace Navigation
             }
 
             _lastPosition = _currentPosition;
-        }
-
-        private static Vector3[] GetFloor(Bounds b)
-        {
-            var bMin = b.min;
-            var bMax = b.max;
-            var b1 = new Vector3(bMin.x, 0, bMin.z);
-            var b2 = new Vector3(bMax.x, 0, bMin.z);
-            var b3 = new Vector3(bMax.x, 0, bMax.z);
-            var b4 = new Vector3(bMin.x, 0, bMax.z);
-
-            return new[] { b1, b2, b3, b4 };
         }
     }
 }

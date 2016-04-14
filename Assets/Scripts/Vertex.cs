@@ -18,6 +18,7 @@ namespace Navigation
         private Edge _edge2;
         private readonly Vertex[] _neighbors = new Vertex[2];
         private readonly Polygon _ownerPolygon;
+        private bool _isConvex;
 
         public Edge Edge1
         {
@@ -74,13 +75,13 @@ namespace Navigation
             var p2To = Position - _neighbors[1].Position;
 
             // Concaveness is determined by the angle between directed edges
-            var isConcaveVertex = Util.CalculateAngle(p2To, p1From) > 180;
+            _isConvex = Util.CalculateAngle(p2To, p1From) < 180;
 
             // Concave vertex normal is found by summation of outgoing edges,
             // whereas convex one's is found by incoming
-            var n = isConcaveVertex
-                ? (p1From.normalized + p2From.normalized).normalized
-                : (p1To.normalized + p2To.normalized).normalized;
+            var n = _isConvex
+                ? (p1To.normalized + p2To.normalized).normalized
+                : (p1From.normalized + p2From.normalized).normalized;
 
             NormalX = n.x;
             NormalZ = n.z;
@@ -115,7 +116,14 @@ namespace Navigation
             // ... but we want the one going through the polygon
             var dot = (oX - X) * NormalX + (oZ - Z) * NormalZ;
 
-            return !(btwn && dot > 0);
+            if (_isConvex)
+            {
+                return btwn && dot < 0;
+            }
+            else
+            {
+                return !(btwn && dot > 0);
+            }
 
         }
 

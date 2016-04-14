@@ -9,71 +9,40 @@ public class Test : MonoBehaviour
     public Transform Source;
     public Transform Target;
 
-    public Transform ConcaveParent;
-
     private INavigator _navigator;
-    private TestAgentView[] _views;
 
-    private const int BucketSize = 3;
-    private readonly Dictionary<int, List<TestAgentView>> _viewBuckets = new Dictionary<int, List<TestAgentView>>();
-    private int _currentBucket;
 
     void Start()
     {
-
-        var children = new List<Vector3>();
-        foreach (Transform t in ConcaveParent)
-        {
-            if (t.gameObject.activeSelf)
-            {
-                children.Add(t.position);
-            }
-        }
-        var concaveAgentView = ConcaveParent.GetComponent<TestAgentView>();
-        concaveAgentView.Agent = new Agent(children.ToArray(), concaveAgentView.transform.position);
-
         _navigator = new Navigator();
-        _views = FindObjectsOfType<TestAgentView>();
-        var agents = FindObjectsOfType<TestAgentView>().Select(x => x.Agent).ToArray();
 
-        for (var j = 0; j < Mathf.CeilToInt(agents.Length / 3f); j++)
-        {
-            _viewBuckets.Add(j, new List<TestAgentView>());
-        }
+        var agentsGos = GameObject.FindGameObjectsWithTag("Agent");
+        var agents = new List<IAgent>();
 
-        var i = 0;
-        foreach (var view in _views)
+        foreach (var agentGo in agentsGos)
         {
-            if (_viewBuckets[i].Count == BucketSize)
+            var vertexPositions = new List<Vector3>();
+            foreach (Transform t in agentGo.transform.Find("Vertices"))
             {
-                i++;
+                vertexPositions.Add(t.position);
             }
-            _viewBuckets[i].Add(view);
+
+            // Init model first
+            var agent = new Agent(vertexPositions.ToArray(), agentGo.transform.position);
+            agents.Add(agent);
+
+            var view = agentGo.AddComponent<AgentView>();
+            view.Agent = agent;
         }
 
-        _navigator.Init(agents);
+        _navigator.Init(agents.ToArray());
     }
 
     void Update()
     {
+        _navigator.Update();
         _navigator.Draw();
-
-        var viewsToUpdate = _viewBuckets[_currentBucket];
-        foreach (var view in viewsToUpdate)
-        {
-            view.MyUpdate();
-        }
-
-        if (++_currentBucket > _viewBuckets.Count - 1)
-        {
-            _currentBucket = 0;
-        }
-
-        //foreach (var testAgentView in _views)
-        //{
-        //    testAgentView.MyUpdate();
-        //}
-
+       
         //var path = _navigator.GetPath(Source.position, Target.position);
 
         //for (int i = 1; i < path.Length; i++)

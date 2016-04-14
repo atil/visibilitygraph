@@ -9,6 +9,7 @@ namespace Navigation
         Vector3[] GetPath(Vector3 src, Vector3 dest);
         void RegisterAgent(IAgent agent);
         void UnregisterAgent(IAgent agent);
+        void Update();
         void Draw();
     }
 
@@ -16,6 +17,9 @@ namespace Navigation
     {
         private readonly List<IAgent> _agents = new List<IAgent>();
         private VisibilityGraph _visibilityGraph;
+        private readonly Dictionary<int, List<IAgent>> _viewBuckets = new Dictionary<int, List<IAgent>>();
+        private const int BucketSize = 3;
+        private int _currentBucket;
 
         public void Init(IAgent[] agents)
         {
@@ -24,6 +28,21 @@ namespace Navigation
             foreach (var agent in agents)
             {
                 RegisterAgent(agent);
+            }
+
+            for (var j = 0; j < Mathf.CeilToInt(agents.Length / 3f); j++)
+            {
+                _viewBuckets.Add(j, new List<IAgent>());
+            }
+
+            var i = 0;
+            foreach (var agent in agents)
+            {
+                if (_viewBuckets[i].Count == BucketSize)
+                {
+                    i++;
+                }
+                _viewBuckets[i].Add(agent);
             }
         }
 
@@ -49,6 +68,21 @@ namespace Navigation
         public Vector3[] GetPath(Vector3 srcPos, Vector3 destPos)
         {
             return _visibilityGraph.GetPath(srcPos, destPos);
+        }
+
+        public void Update()
+        {
+            var agentsToUpdate = _viewBuckets[_currentBucket];
+            foreach (var agent in agentsToUpdate)
+            {
+                agent.Update();
+            }
+
+            if (++_currentBucket > _viewBuckets.Count - 1)
+            {
+                _currentBucket = 0;
+            }
+
         }
 
         public void Draw()
