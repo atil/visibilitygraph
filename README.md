@@ -16,3 +16,7 @@ Lee's visibility graph implementation in Unity
 - Using AVL tree from : https://code.google.com/archive/p/self-balancing-avl-tree/
 
 - Polygon intersection is not handled (yet)
+
+What it looks like:
+
+![Vgraph](/vgraph.gif)
