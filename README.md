@@ -1,6 +1,8 @@
 # Visibility graph in Unity [WIP]
 Lee's visibility graph implementation in Unity
 
+[Development on hold]
+
 - Uses algorithm : http://cs.smith.edu/~streinu/Teaching/Courses/274/Spring98/Projects/Philip/fp/algVisibility.htm
 
 - More details here : http://dav.ee/papers/Visibility_Graph_Algorithm.pdf
